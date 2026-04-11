@@ -1,0 +1,4 @@
+*.apk
+*.so
+*.bin
+node_modules/
