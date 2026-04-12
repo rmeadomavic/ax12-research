@@ -1,0 +1,42 @@
+# idle-strace.txt — AX12 Gimbal Controller Strace (short capture)
+#
+# Full file: 8039 lines, 617262 bytes
+# Too large for GitHub Contents API push via MCP tools.
+# Available in the local repository.
+#
+# Capture details:
+# ================
+# Target PID:    14356 (attached with 40 threads)
+# strace flags:  -tt -xx (timestamps + hex read/write dumps)
+# Time range:    07:05:03 — 07:05:21 (~18 seconds)
+# Unique PIDs:   3 active threads (14372, 14387, 14421)
+#
+# Syscall breakdown:
+#   read:  3366 calls
+#   write: 2638 calls
+#   (hex dumps account for remaining lines)
+#
+# Key observations:
+# - PID 14372 reads/writes fd 94 (serial/UART to gimbal MCU)
+#   - Reads binary protocol frames starting with 0xa6 header
+#   - Frame sizes vary: 7, 12-21, 28-87 bytes
+#   - Pattern: 0xa6 [len] [cmd] [payload] — likely gimbal telemetry
+#   - Also uses fd 65 for eventfd IPC notifications
+#
+# - PID 14387 reads/writes fd 51 and 52
+#   - fd 52: eventfd counter (8-byte reads/writes)
+#   - fd 51: reads 24-48 byte messages (gimbal state?)
+#   - Tight polling loop: read(52) -> read(51) -> write(52) -> read(52)
+#
+# - PID 14421 writes to fd 52 (eventfd notifications)
+#   - Signals PID 14387 with counter increments
+#
+# Protocol analysis:
+#   Frames on fd 94 start with 0xa6 (sync byte)
+#   Byte 1-2: length/command
+#   Common patterns:
+#     0xa6 0x08 0x10 — short status (7 bytes)
+#     0xa6 0x57 0x10 — extended telemetry (21-87 bytes)
+#     0xa6 0x15 0xc3 — calibration/sensor data (21 bytes)
+#     0xa6 0x0e 0x10 — write command (14 bytes)
+#   This matches SimpleBGC/STorM32 gimbal protocol characteristics

@@ -1,0 +1,47 @@
+# idle-strace-full.txt — AX12 Gimbal Controller Strace (full capture)
+#
+# Full file: 33770 lines, 2877587 bytes (2.8 MB)
+# Too large for GitHub Contents API push via MCP tools.
+# Available in the local repository.
+#
+# Capture details:
+# ================
+# Target PID:    14356 (attached with 39 threads)
+# strace flags:  -tt -f (timestamps + follow forks, full syscalls)
+# Time range:    07:05:25 — approximately 60 seconds
+# Unique PIDs:   41 threads traced
+#
+# Syscall breakdown (top 20):
+#   <...resumed>:  12040  (continuation of interrupted syscalls)
+#   ioctl:          7132  (binder IPC, device control)
+#   futex:          5528  (thread synchronization)
+#   ppoll:          2698  (fd polling / event wait)
+#   read:           2192
+#   write:          1446
+#   close:          1125
+#   fcntl:           500
+#   dup:             375
+#   fstat:           250
+#   nanosleep:       148
+#   mmap:            131
+#   munmap:          125
+#   prctl:            12
+#   mprotect:          6
+#   epoll_pwait:       4
+#   restart_syscall:   3
+#   madvise:           3
+#   sigaltstack:       2
+#
+# Key differences from short capture:
+# - Full syscall tracing (not just read/write with hex dumps)
+# - Shows binder IPC via ioctl(BINDER_WRITE_READ)
+# - Thread synchronization visible via futex calls
+# - ppoll shows event-driven architecture with multiple fd sets
+# - close/dup/fcntl reveal fd management patterns
+# - 41 threads vs 3 active in short capture = full thread activity
+#
+# This capture is essential for understanding:
+# - Complete IPC architecture between gimbal threads
+# - Binder communication with Android framework
+# - Timer/scheduling behavior (nanosleep, ppoll timeouts)
+# - Memory management patterns (mmap/munmap/madvise)
