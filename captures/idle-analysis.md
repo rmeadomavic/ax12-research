@@ -1,7 +1,7 @@
 # UMBUS Idle Serial Capture Analysis
 
 **Date:** 2026-04-12
-**Device:** RadioMaster AX12 (Android 9, MT6739)
+**Device:** RadioMaster AX12 (Android 9, MT8788)
 **App:** com.Flyshark.RadioMasterAX (Qt6 + libQt6SerialPort)
 **Serial port:** /dev/ttyS0 @ 921600 baud
 **Capture duration:** 10 seconds strace + 10 seconds raw binary

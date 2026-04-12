@@ -117,23 +117,6 @@ echo 'export ANTHROPIC_API_KEY="sk-ant-YOUR_KEY_HERE"' >> ~/.bashrc
 claude
 ```
 
-### Quick-launch script
-
-Create a shortcut to launch Claude Code with permissions bypass (for development use):
-
-```bash
-mkdir -p ~/bin
-cat > ~/bin/cc << 'EOF'
-#!/data/data/com.termux/files/usr/bin/bash
-exec claude --dangerously-skip-permissions "$@"
-EOF
-chmod +x ~/bin/cc
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-Now just type `cc` to launch.
-
 ## Step 6: Root Access
 
 ### The Good News: Factory Root

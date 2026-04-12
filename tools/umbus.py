@@ -52,7 +52,7 @@ class FrameType(IntEnum):
 # For most types, size == the type/length byte itself. Exceptions noted.
 FRAME_SIZES = {
     FrameType.CHANNEL_DATA: 87,   # 0x57 = 87 decimal ✓
-    FrameType.HEARTBEAT_MCU: 8,   # 0x08 = 8 (MCU sends 7, App sends 8; use 8 as max)
+    FrameType.HEARTBEAT_MCU: 7,   # MCU sends 7B; App sends 8B (disambiguate by header bytes)
     FrameType.EXTENDED: 18,       # 0x10 = 16 but actual is 18 (2 extra bytes)
     FrameType.ELRS_TELEM: 21,     # 0x15 = 21 decimal ✓
     FrameType.CMD_07: 7,          # 0x07 = 7 decimal ✓
@@ -125,8 +125,8 @@ class UMBUSFrame:
         if len(self.raw) < CHANNEL_OFFSET + 2:
             return None
         values = []
-        # Parse from channel offset to end of frame (minus checksum byte)
-        for offset in range(CHANNEL_OFFSET, len(self.raw) - 1, 2):
+        # Parse from channel offset to end of frame (minus 3: unknown byte, seq counter, checksum)
+        for offset in range(CHANNEL_OFFSET, len(self.raw) - 3, 2):
             if offset + 2 > len(self.raw):
                 break
             val = struct.unpack_from('<H', self.raw, offset)[0]  # unsigned 16-bit LE
@@ -240,11 +240,19 @@ class UMBUSDecoder:
             frame_type = self._buf[1]
 
             # Determine frame size
-            frame_size = FRAME_SIZES.get(frame_type)
+            # Special case: 0x08 can be 7B (MCU) or 8B (App), disambiguate
+            if frame_type == 0x08 and len(self._buf) >= 4:
+                if self._buf[2] == 0x35:  # App heartbeat header
+                    frame_size = 8
+                else:
+                    frame_size = 7  # MCU heartbeat
+            else:
+                frame_size = FRAME_SIZES.get(frame_type)
+
             if frame_size is None:
-                # Unknown frame type — try common sizes or skip
-                # For unknown types, use the second byte as potential length
-                frame_size = frame_type + 2  # heuristic
+                # Unknown frame type: the type byte IS the total length
+                # for most UMBUS frames (0x57=87, 0x15=21, 0x0C=12, etc.)
+                frame_size = frame_type
                 if frame_size < 3 or frame_size > 256:
                     # Skip this sync byte
                     del self._buf[0]
@@ -302,50 +310,24 @@ class UMBUSEncoder:
 
     @staticmethod
     def _finalize(data: bytearray) -> bytes:
-        """Add checksum to frame."""
-        chk = 0
-        for b in data:
-            chk ^= b
-        data.append(chk)
+        """Add placeholder checksum byte. The real algorithm is unknown."""
+        data.append(0x00)  # Placeholder: real checksum algorithm TBD
         return bytes(data)
 
     @staticmethod
-    def channel_data(gimbals: list[int], channels: list[int]) -> bytes:
-        """
-        Build a channel data frame (type 0x57).
-
-        Args:
-            gimbals: 4 signed 16-bit gimbal values [-32768..32767]
-            channels: Up to 33 unsigned 16-bit channel values [0..65535]
-        """
-        frame = bytearray([SYNC_BYTE, FrameType.CHANNEL_DATA])
-        frame.extend(CHANNEL_HEADER)
-
-        # Gimbal values (signed 16-bit LE)
-        for i in range(NUM_GIMBALS):
-            val = gimbals[i] if i < len(gimbals) else 0
-            frame.extend(struct.pack('<h', val))
-
-        # Padding between gimbals and channels (bytes 14-17)
-        frame.extend(b'\x00' * (CHANNEL_OFFSET - GIMBAL_OFFSET - NUM_GIMBALS * 2))
-
-        # Channel values (unsigned 16-bit LE)
-        for i in range(33):
-            val = channels[i] if i < len(channels) else CHANNEL_CENTER
-            frame.extend(struct.pack('<H', val))
-
-        # Pad to 86 bytes (frame size - 1 for checksum)
-        while len(frame) < 86:
-            frame.append(0x00)
-
-        return UMBUSEncoder._finalize(frame)
+    def heartbeat_app() -> bytes:
+        """Build an App heartbeat frame (the exact bytes observed in captures)."""
+        return HEARTBEAT_APP_FIXED
 
     @staticmethod
-    def heartbeat() -> bytes:
-        """Build a heartbeat frame (type 0x08)."""
-        frame = bytearray([SYNC_BYTE, FrameType.HEARTBEAT])
-        frame.extend(b'\x00' * 5)  # 5 bytes padding
-        return UMBUSEncoder._finalize(frame)
+    def keepalive() -> bytes:
+        """Build a keep-alive frame (0x07, the exact bytes observed in captures)."""
+        return CMD_07_FIXED
+
+    @staticmethod
+    def poll() -> bytes:
+        """Build a polling/status request frame (0x0E, the exact bytes observed in captures)."""
+        return CMD_0E_FIXED
 
 
 # --- Utility Functions ---

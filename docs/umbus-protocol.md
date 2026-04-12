@@ -3,7 +3,7 @@
 RadioMaster's proprietary internal bus protocol for communication between the Android SoC (MT8788) and the AT32 MCU over UART.
 
 **Transport:** `/dev/ttyS0` @ 921,600 baud, 8N1  
-**Bandwidth:** ~2,414 bytes/sec (~19.3 kbps, <0.02% of link capacity)  
+**Bandwidth:** ~2,414 bytes/sec (~19.3 kbps, ~2% of link capacity)  
 **Direction ratio:** 97.9% MCU→App, 2.1% App→MCU
 
 ## Frame Format
@@ -74,7 +74,7 @@ Offset  Size  Type     Description
 82-83   2     u16le    Last channel pair
 84      1     u8       Unknown
 85      1     u8       Sequence counter (incrementing)
-86      1     u8       Checksum (XOR of bytes 0-85)
+86      1     u8       Checksum (algorithm unknown)
 ```
 
 **Gimbal values** (bytes 6-13): Signed 16-bit little-endian. Range approximately -500 to +500 at center rest, full range TBD. Four axes correspond to two physical sticks (2 axes each). Axis-to-stick mapping requires physical testing.
@@ -247,7 +247,7 @@ The last byte of each frame appears to be a checksum or CRC, but the algorithm h
 
 ELRS CRSF (Crossfire Serial) frames are transported within UMBUS. The AT32 MCU communicates directly with the ELRS RF module and wraps CRSF telemetry into UMBUS 0x15 frames. The app-side `CrsfSerial` class decodes these for display in the UI.
 
-Outgoing channel data is sent from the app in UMBUS 0x57 frames. The MCU extracts channel values and re-encodes them as standard CRSF packed channels for the ELRS module.
+The MCU sends channel data to the app in 0x57 frames. The app processes mixing and sends the mixed output back to the MCU (likely via 0x0C or another App-to-MCU frame type). The MCU then re-encodes the final channel values as standard CRSF packed channels for the ELRS module.
 
 ## Tools
 

@@ -139,7 +139,7 @@ Embedded Lua 5.3.6 (EdgeTX-compatible):
 | Display | 5.5" 1280x720 MIPI DSI, cap touch |
 | Storage | 64GB eMMC, 38 partitions |
 | RAM | 4GB (3.7GB usable), 1GB ZRAM swap |
-| Battery | Li-ion, 2946mAh per cell |
+| Battery | 10,000mAh (fuel gauge reports 2946mAh, discrepancy under investigation) |
 
 ## Detailed References
 
