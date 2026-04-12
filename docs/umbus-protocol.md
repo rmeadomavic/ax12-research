@@ -21,7 +21,7 @@ Every UMBUS frame follows this structure:
 - **Type/Length byte:** Serves as both frame type identifier AND total frame length for most types (e.g., `0x57` = type CHANNEL_DATA, total length = 87 bytes)
 - **Header:** Encodes routing information (source/destination)
 - **Payload:** Frame-type-specific data
-- **Checksum:** XOR of all preceding bytes
+- **Checksum:** Last byte, algorithm unknown (not simple XOR or CRC8)
 
 ### Header Encoding
 
@@ -226,17 +226,9 @@ Time(ms)  MCU→App                              App→MCU
 2000      (cycle repeats)                      0x0e (cycle repeats)
 ```
 
-## Checksum Algorithm
+## Checksum
 
-XOR of all bytes in the frame except the last byte (which is the checksum itself):
-
-```python
-def compute_checksum(frame_without_checksum: bytes) -> int:
-    result = 0
-    for b in frame_without_checksum:
-        result ^= b
-    return result
-```
+The last byte of each frame appears to be a checksum or CRC, but the algorithm has not been identified. Simple XOR, CRC-8 (multiple polynomials), and sum-based approaches all fail to match captured frames. This is an open research question.
 
 ## Frame Type Summary
 
@@ -265,6 +257,7 @@ Outgoing channel data is sent from the app in UMBUS 0x57 frames. The MCU extract
 
 ## Open Questions
 
+- [ ] Checksum algorithm (last byte of each frame; not XOR, CRC8, or sum — needs binary analysis)
 - [ ] Gimbal axis-to-stick mapping (needs physical testing with one stick at a time)
 - [ ] Full gimbal value range (approximate -500 to +500 observed, full range unknown)
 - [ ] 0x15 field identification (which bytes are RSSI, LQ, SNR, TX power)

@@ -55,9 +55,8 @@ def main():
 
             # Render
             out = "\033[H"
-            chk = "OK" if latest_frame.checksum_valid else "BAD"
-            out += f"  AX12 SERIAL MONITOR  |  frame #{frame_count}  |  chk={chk}  |  Ctrl+C quit\n"
-            out += f"  Decoded: {decoder.frames_decoded}  Bad: {decoder.frames_bad_checksum}  Skip: {decoder.bytes_skipped}B\n\n"
+            out += f"  AX12 SERIAL MONITOR  |  frame #{frame_count}  |  Ctrl+C quit\n"
+            out += f"  Decoded: {decoder.frames_decoded}  Skip: {decoder.bytes_skipped}B\n\n"
 
             # Show gimbals separately
             gimbals = latest_frame.gimbals

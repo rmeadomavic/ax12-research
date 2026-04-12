@@ -76,7 +76,7 @@ Bytes 18+: unsigned 16-bit LE channel outputs (center = 0x8000)
 - Sync: `0xA6`
 - Channel center: `0x8000` (32768)
 - Switch high: `0xFE0C` (65036)
-- Checksum: XOR of all preceding bytes
+- Checksum: last byte, algorithm unknown
 
 ## Software Architecture
 

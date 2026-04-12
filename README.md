@@ -92,6 +92,12 @@ Custom Lua scripts can be placed at `/storage/emulated/0/AX12LUA/` for widgets, 
 - [ ] DSC port USB loopback trick (gamepad mode for gimbal access)
 - [ ] Custom control app development
 
+## Methodology
+
+Protocol data was captured via `strace` on the running Flyshark app — observing the app's own serial I/O without interfering with it. Frame structures, timing, and constants were derived from these passive captures. Native library analysis used `strings` and `readelf` on the extracted `.so` (symbol names and printable strings only — no decompilation).
+
+Gimbal axis mapping and some interactive captures are still TBD. Early hands-on testing sessions were noisy (wrong USB cables, stick movement timing issues, port confusion) — the protocol spec intentionally relies only on clean automated captures, not those manual sessions.
+
 ## Contributing
 
 This is an ongoing reverse engineering effort. If you have an AX12 and want to help:

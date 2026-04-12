@@ -157,8 +157,7 @@ class UMBUSFrame:
         return '\n'.join(lines)
 
     def __repr__(self) -> str:
-        chk = "OK" if self.checksum_valid else "BAD"
-        return f"UMBUSFrame({self.type_name}, {len(self.raw)}B, chk={chk})"
+        return f"UMBUSFrame({self.type_name}, {len(self.raw)}B)"
 
     def summary(self) -> str:
         """Human-readable summary of the frame contents."""
@@ -183,21 +182,20 @@ class UMBUSFrame:
 
 
 # --- Checksum ---
-
-def compute_checksum(data: bytes) -> int:
-    """Compute UMBUS checksum (XOR of all bytes except the last one)."""
-    result = 0
-    for b in data[:-1]:
-        result ^= b
-    return result
-
+# NOTE: The checksum algorithm has NOT been verified. Simple XOR, CRC8, and
+# sum-based approaches all fail to match real captured frames. The last byte
+# of each frame appears to be a checksum but the algorithm is unknown.
+# Until identified, checksum validation is disabled (always returns True).
 
 def verify_checksum(frame: bytes) -> bool:
-    """Verify the checksum of a complete UMBUS frame."""
-    if len(frame) < 3:
-        return False
-    expected = compute_checksum(frame)
-    return expected == frame[-1]
+    """Verify the checksum of a complete UMBUS frame.
+
+    Currently always returns True — the checksum algorithm has not been
+    reverse-engineered yet. The last byte of each frame varies in a way
+    consistent with a checksum, but no standard algorithm (XOR, CRC8,
+    sum mod 256) matches the captured data.
+    """
+    return True
 
 
 # --- Decoder ---
