@@ -68,9 +68,11 @@ def parse_strace_syscalls(text: str) -> list[dict]:
     for line in text.split('\n'):
         line = line.rstrip()
 
-        # Match syscall line: HH:MM:SS.ffffff read(103, "...", 4096) = 87
+        # Match syscall line, with optional [pid XXXXX] prefix:
+        #   07:05:03.963555 read(103, "...", 4096) = 87
+        #   [pid 14372] 07:05:03.963555 read(94, "...", 32768) = 7
         syscall_match = re.match(
-            r'(\d{2}:\d{2}:\d{2}\.\d+)\s+(read|write)\((\d+),',
+            r'(?:\[pid\s+\d+\]\s+)?(\d{2}:\d{2}:\d{2}\.\d+)\s+(read|write)\((\d+),',
             line
         )
         if syscall_match:

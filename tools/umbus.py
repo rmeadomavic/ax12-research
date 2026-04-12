@@ -508,6 +508,98 @@ class UMBUSEncoder:
         """Build a polling/status request frame (0x0E, the exact bytes observed in captures)."""
         return CMD_0E_FIXED
 
+    @staticmethod
+    def channel_data(gimbals: list[int] | None = None,
+                     channels: list[int] | None = None,
+                     seq: int = 0) -> bytes:
+        """Build a CHANNEL_DATA frame (0x57, 87 bytes) with custom values.
+
+        Args:
+            gimbals: 4 signed 16-bit gimbal values (default: [0,0,0,0]).
+            channels: Up to 32 unsigned 16-bit channel values (default: all CENTER).
+            seq: Sequence counter byte (0-255).
+        """
+        g = gimbals if gimbals is not None else [0, 0, 0, 0]
+        ch = channels if channels is not None else [CHANNEL_CENTER] * 32
+
+        # Pad/truncate to expected counts
+        g = (g + [0] * NUM_GIMBALS)[:NUM_GIMBALS]
+        ch = (ch + [CHANNEL_CENTER] * 32)[:32]
+
+        buf = bytearray()
+        buf.append(SYNC_BYTE)                    # 0: sync
+        buf.append(FrameType.CHANNEL_DATA)        # 1: type/length = 0x57
+        buf.extend(CHANNEL_HEADER)                # 2-5: header 10 02 04 01
+        for v in g:                               # 6-13: gimbals (s16le)
+            buf.extend(struct.pack('<h', max(-32768, min(32767, v))))
+        buf.extend(b'\x00\x00\x00\x00')          # 14-17: unknown (zeros)
+        for v in ch:                              # 18-81: channels (u16le)
+            buf.extend(struct.pack('<H', max(0, min(65535, v))))
+        buf.append(0x00)                          # 82: unknown byte
+        buf.append(seq & 0xFF)                    # 83: sequence counter
+
+        # Pad to 86 bytes (before checksum)
+        while len(buf) < 86:
+            buf.append(0x00)
+
+        return UMBUSEncoder._finalize(buf)
+
+    @staticmethod
+    def heartbeat_mcu() -> bytes:
+        """Build an MCU heartbeat frame (7B, no checksum)."""
+        return HEARTBEAT_MCU_FIXED
+
+    @staticmethod
+    def extended_telemetry(sub_index: int = 0, descriptor: int = 0x06,
+                           value: int = 0) -> bytes:
+        """Build an EXTENDED telemetry frame (0x10, 18 bytes).
+
+        Args:
+            sub_index: Sub-channel index (0, 1, or 2).
+            descriptor: Descriptor byte (default 0x06 from captures).
+            value: 16-bit telemetry value.
+        """
+        buf = bytearray()
+        buf.append(SYNC_BYTE)                     # 0: sync
+        buf.append(FrameType.EXTENDED)             # 1: type = 0x10
+        buf.extend([0x02, 0x04])                   # 2-3: header (reversed for extended)
+        buf.append(descriptor & 0xFF)              # 4: descriptor
+        buf.append(sub_index & 0xFF)               # 5: sub-index
+        buf.extend([0x00, 0x00])                   # 6-7: padding
+        buf.extend(struct.pack('<H', value & 0xFFFF))  # 8-9: value
+        buf.extend([0x00] * 7)                     # 10-16: padding
+
+        return UMBUSEncoder._finalize(buf)
+
+    @staticmethod
+    def elrs_telemetry(timing_us: int = 20000, link_status: int = 0,
+                       seq: int = 0) -> bytes:
+        """Build an ELRS_TELEM frame (0x15, 21 bytes).
+
+        Args:
+            timing_us: Timing interval in microseconds (default 20000 = 50Hz).
+            link_status: Link status word (0xFFFF = invalid).
+            seq: Sequence counter.
+        """
+        buf = bytearray()
+        buf.append(SYNC_BYTE)                     # 0: sync
+        buf.append(FrameType.ELRS_TELEM)           # 1: type = 0x15
+        buf.extend([0xc3, 0x02])                   # 2-3: header
+        buf.append(0x00)                           # 4: padding
+        buf.append(ELRS_CRSF_ADDR_RADIO)           # 5: CRSF addr 0xEA
+        buf.append(0x0A)                           # 6: CRSF size
+        buf.append(ELRS_CRSF_TYPE_HANDSET)         # 7: CRSF type 0x3A
+        buf.append(ELRS_CRSF_ADDR_RADIO)           # 8: CRSF dest
+        buf.append(ELRS_CRSF_ADDR_TX)              # 9: CRSF origin 0xEE
+        buf.append(ELRS_SUBCMD_TIMING)             # 10: sub-cmd 0x10
+        buf.extend([0x00, 0x00])                   # 11-12: data_field1
+        buf.extend(struct.pack('>H', timing_us & 0xFFFF))  # 13-14: timing (big-endian)
+        buf.extend(struct.pack('<H', link_status & 0xFFFF)) # 15-16: link status
+        buf.append(seq & 0xFF)                     # 17: seq
+        buf.extend([0x00, 0x00])                   # 18-19: padding
+
+        return UMBUSEncoder._finalize(buf)
+
 
 # --- Utility Functions ---
 
