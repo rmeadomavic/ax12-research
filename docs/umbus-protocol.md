@@ -21,7 +21,7 @@ Every UMBUS frame follows this structure:
 - **Type/Length byte:** Serves as both frame type identifier AND total frame length for most types (e.g., `0x57` = type CHANNEL_DATA, total length = 87 bytes)
 - **Header:** Encodes routing information (source/destination)
 - **Payload:** Frame-type-specific data
-- **Checksum:** Last byte, algorithm unknown (not simple XOR or CRC8)
+- **Checksum:** Last byte, CRC-8/MAXIM (see Checksum section below)
 
 ### Header Encoding
 
@@ -74,7 +74,7 @@ Offset  Size  Type     Description
 82-83   2     u16le    Last channel pair
 84      1     u8       Unknown
 85      1     u8       Sequence counter (incrementing)
-86      1     u8       Checksum (algorithm unknown)
+86      1     u8       Checksum (CRC-8/MAXIM, init=0x00)
 ```
 
 **Gimbal values** (bytes 6-13): Signed 16-bit little-endian. Range approximately -500 to +500 at center rest, full range TBD. Four axes correspond to two physical sticks (2 axes each). Axis-to-stick mapping requires physical testing.
@@ -228,7 +228,34 @@ Time(ms)  MCU→App                              App→MCU
 
 ## Checksum
 
-The last byte of each frame appears to be a checksum or CRC, but the algorithm has not been identified. Simple XOR, CRC-8 (multiple polynomials), and sum-based approaches all fail to match captured frames. This is an open research question.
+**Algorithm: CRC-8/MAXIM** (Dallas 1-Wire CRC, polynomial 0x31 normal / 0x8C reflected)
+
+The last byte of each frame is a CRC-8 checksum computed over bytes[1:-1] (all bytes except the sync byte and the checksum itself).
+
+```python
+CRC8_TABLE = [0x00, 0x5E, 0xBC, 0xE2, ...]  # 256-byte lookup table
+
+def umbus_crc8(data, init=0x00):
+    crc = init
+    for byte in data:
+        crc = CRC8_TABLE[byte ^ crc]
+    return crc
+
+checksum = umbus_crc8(frame[1:-1], init)
+```
+
+**Init values** vary by frame type (most use 0x00):
+
+| Frame Type | Init | Notes |
+|------------|------|-------|
+| 0x57, 0x0E, 0x07, 0x0C, 0x08-App | 0x00 | Standard types |
+| 0x10 (extended telemetry) | 0x7F | MCU subsystem seed |
+| 0x15 (ELRS telemetry) | 0x32 | ELRS relay seed |
+| 0x08 MCU heartbeat | N/A | 7B frame, checksum byte absent |
+
+The firmware also maintains a parallel XOR accumulator as a fallback: if the CRC doesn't match, a simple XOR of the same bytes is checked before declaring an error.
+
+See `docs/checksum-investigation.md` for the full binary analysis.
 
 ## Frame Type Summary
 
@@ -257,7 +284,7 @@ The MCU sends channel data to the app in 0x57 frames. The app processes mixing a
 
 ## Open Questions
 
-- [ ] Checksum algorithm (last byte of each frame; not XOR, CRC8, or sum — needs binary analysis)
+- [x] Checksum algorithm: CRC-8/MAXIM (poly 0x31/0x8C reflected, init type-dependent)
 - [ ] Gimbal axis-to-stick mapping (needs physical testing with one stick at a time)
 - [ ] Full gimbal value range (approximate -500 to +500 observed, full range unknown)
 - [ ] 0x15 field identification (which bytes are RSSI, LQ, SNR, TX power)
