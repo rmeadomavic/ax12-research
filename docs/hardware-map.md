@@ -76,7 +76,7 @@ Bytes 18+: unsigned 16-bit LE channel outputs (center = 0x8000)
 - Sync: `0xA6`
 - Channel center: `0x8000` (32768)
 - Switch high: `0xFE0C` (65036)
-- Checksum: last byte, algorithm unknown
+- Checksum: CRC-8/MAXIM (poly 0x31/0x8C, per-type init values)
 
 ## Software Architecture
 
@@ -140,6 +140,83 @@ Embedded Lua 5.3.6 (EdgeTX-compatible):
 | Storage | 64GB eMMC, 38 partitions |
 | RAM | 4GB (3.7GB usable), 1GB ZRAM swap |
 | Battery | 10,000mAh (fuel gauge reports 2946mAh, discrepancy under investigation) |
+
+## Physical Controls
+
+Mode 2 layout (left stick = throttle/yaw, right stick = pitch/roll).
+
+| Control | Type | Position | Notes |
+|---------|------|----------|-------|
+| Left Gimbal | X5 Hall-Effect, 2 axes | Left of screen | Throttle (Y, non-centering) + Yaw (X) |
+| Right Gimbal | X5 Hall-Effect, 2 axes | Right of screen | Pitch (Y) + Roll (X), self-centering |
+| SA | 2-pos latching | Upper-left shoulder | On/off toggle |
+| SD | 2-pos latching | Upper-right shoulder | On/off toggle |
+| SB | 3-pos toggle | Upper-left shoulder | Up/mid/down |
+| SC | 3-pos toggle | Upper-right shoulder | Up/mid/down |
+| SE | 3-pos toggle | Left shoulder trigger | Up/mid/down |
+| SF | 3-pos toggle | Right shoulder trigger | Up/mid/down |
+| S1 | Scroll wheel (analog) | Left shoulder | Rotary with center detent |
+| S2 | Scroll wheel (analog) | Right shoulder | Rotary with center detent |
+| T1-T4 | Trim buttons | Around gimbals (or touchscreen-only) | Under investigation |
+| 6 front buttons | Momentary | Front face | Under investigation |
+
+Sticks are removable and stow in compartments on the back. Upgradeable to AG01 Nano CNC aluminum gimbals. Low-tension spring set included.
+
+### Confirmed UMBUS Mapping
+
+Determined via live calibration tool (`tools/calibrator.py`):
+
+**Gimbal axes** (bytes 6-13 of 0x57 frame, signed 16-bit LE):
+
+| Index | Axis | Stick | UMBUS byte offset |
+|-------|------|-------|-------------------|
+| G0 | Yaw / Rudder | Left X | 6-7 |
+| G1 | Pitch / Elevator | Right Y | 8-9 |
+| G2 | Throttle | Left Y (non-centering) | 10-11 |
+| G3 | Roll / Aileron | Right X | 12-13 |
+
+**Switch/channel mapping** (bytes 18+ of 0x57 frame, unsigned 16-bit LE):
+
+| Control | Channel | Idle Value | Notes |
+|---------|---------|------------|-------|
+| S1 (scroll wheel) | CH06 | ~500 | Full range 20-65526 |
+| S2 (scroll wheel) | CH07 | ~65036 | Full range 112-65472 |
+| SA (2-pos latch) | CH14 | 65036 | Toggles to 500 |
+| SB (3-pos) | CH15 | 65036 | 3 positions |
+| SC (3-pos) | CH16 | 65036 | 3 positions |
+| SD (2-pos latch) | CH17 | 65036 | Toggles to 500 |
+| SF (3-pos) | CH19 | 500 | 3 positions |
+| 6-pos selector | CH29 | varies | All 6 "front buttons" are one rotary control |
+| SE (3-pos) | CH30 | 65024 | Master switch — triggers changes across 23 channels |
+| T1 (trim) | CH31 | 766 | Increments by 512 per press (physical button confirmed) |
+| T2 (trim) | CH30 | shared with SE | Needs further investigation |
+
+## Onboard Sensors
+
+The MT8788 SoC includes sensor interfaces originally designed for a phone/tablet platform. RadioMaster retained several:
+
+| Sensor | Chip | I2C Address | Bus | Status | Potential Use |
+|--------|------|-------------|-----|--------|---------------|
+| IMU (6-axis) | ICM-42607 | 0x68/0x69 | i2c@11011000 | Present | Head tracking, tilt control, crash detection |
+| Magnetometer | Unknown | 0x0c | i2c@11011000 | Present | Compass heading for GCS |
+| GPS | MT6631 combo | N/A | Internal | Present | Radio position, RTH distance, geofencing |
+| ALS/Proximity | Unknown | 0x1e | i2c@1100f000 | Present | Auto-brightness |
+| NFC | Unknown | 0x08 | i2c@1100f000 | Present | Model/bind pairing? |
+| Camera (main) | Unknown | Various | i2c@11009000 | Wired, not populated | No camera module installed |
+| Camera (sub) | Unknown | Various | i2c@11009000 | Wired, not populated | No camera module installed |
+
+The IMU and GPS are particularly interesting for GCS applications — the radio knows its own position and orientation. The NFC chip could enable tap-to-bind or tap-to-load-model workflows.
+
+## Connectivity
+
+| Port | Location | Purpose |
+|------|----------|---------|
+| Mini HDMI In | Top edge | FPV video feed (DJI/Walksnail/HDZero/OpenIPC) |
+| Mini HDMI Out | Top edge | Mirror display to external monitor |
+| USB-C (data) | Top edge | Trainer port, ADB, data transfer |
+| USB-C (charge) | Bottom edge | USB PD charging |
+| 3.5mm audio | Bottom edge | Headphone jack |
+| Nano module bay | Top edge | External RF module (ELRS, etc.) |
 
 ## Detailed References
 
