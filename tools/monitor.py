@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3
+#!/usr/bin/env python3
 """
 AX12 Live Serial Monitor
 
