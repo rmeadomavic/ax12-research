@@ -30,6 +30,7 @@ The AT32 MCU handles all physical inputs (gimbals, switches, pots) and controls 
 | **[Device Tree Analysis](docs/device-tree.md)** | SoC peripherals: UARTs, SPI, I2C, GPIO, sensors |
 | **[System Audit](docs/system-audit.md)** | Partitions, kernel modules, device nodes, sysfs |
 | **[Native Library Analysis](docs/native-lib-analysis.md)** | 25MB .so reverse engineering: classes, methods, constants |
+| **[Peripheral Exploration](docs/peripheral-exploration.md)** | IMU, SPI1, Bluetooth, LEDs, modem, and 12 other onboard peripherals |
 
 ## Tools
 
