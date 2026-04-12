@@ -1,1 +1,49 @@
-FILE_TOO_LARGE_FOR_INLINE_PUSH
+/* AX12 Device Tree Source — extracted from running device
+ *
+ * Full file: 6601 lines, 208932 bytes
+ * Extracted via: dtc -I fs -O dts /proc/device-tree
+ *
+ * This placeholder exists because the full DTS exceeds the GitHub
+ * Contents API single-call size limit when pushed via MCP tools.
+ * The complete file is available in the local repository.
+ *
+ * Hardware Summary (from full DTS):
+ * =================================
+ * SoC:        MediaTek MT6771 (marketed as MT8788)
+ * CPU:        4x Cortex-A53 (cluster0) + 4x Cortex-A73 (cluster1)
+ * GPU:        Mali Bifrost @ 0x13040000
+ * Display:    DSI panel (nt35595_fhd_dsi_cmd_truly_nt50358)
+ * Cameras:    3x sensors via seninf (main @0x36, sub @0x10, main_two @0x38)
+ * Storage:    eMMC via msdc0, SD via msdc1, UFS @ 0x11270000
+ * WiFi/BT:    MT6771-consys @ 0x18070000 (status=okay)
+ * NFC:        nfc-gpio-v2 (GPIO IRQ=20, RST=19)
+ * USB:        USB3 XHCI + Type-C via MT6370 PD manager
+ * Sensors:    ICM42607 accel/gyro (i2c1), ALS/PS (i2c3 @0x1e)
+ * PMIC:       MT6358 (main) + MT6370 (sub-PMIC: charger, LEDs, DSV, LDO)
+ * Modem:      LTE CLDMA (md_id=0), Cat-9 support
+ * IPU:        Dual VPU cores (ipu0 @ 0x19180000, ipu1 @ 0x19280000)
+ * Audio:      MT6577-UART DMA, BT-CVSD, SmartPA on i2c6 @0x34
+ * Touch:      mt6771-touch (5-point, FHD 720x1280)
+ * Charger:    SwitchCharging algo, PE2/3/4, battery_cv=4.2V
+ * Misc:       new-mobi mt8788-misc_drv (nm_miscdev, status=okay)
+ *             HDMI bridge IC (ite166121) on odm node
+ *             dm9051 SPI Ethernet (disabled)
+ *             Goodix fingerprint (disabled)
+ *
+ * Boot args (from chosen node):
+ *   console=tty0 console=ttyS0,921600n1
+ *   androidboot.hardware=mt6771
+ *   androidboot.verifiedbootstate=green
+ *   androidboot.selinux=permissive
+ *   dm="system none ro,0 1 android-verity ..."
+ *
+ * See all-nodes.txt for the complete list of 526 DT node names.
+ */
+
+/dts-v1/;
+
+/ {
+	model = "MT8788";
+	compatible = "mediatek,mt6771";
+	/* Full content: 6601 lines — push locally via git */
+};
