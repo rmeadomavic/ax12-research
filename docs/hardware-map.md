@@ -149,16 +149,16 @@ Mode 2 layout (left stick = throttle/yaw, right stick = pitch/roll).
 |---------|------|----------|-------|
 | Left Gimbal | X5 Hall-Effect, 2 axes | Left of screen | Throttle (Y, non-centering) + Yaw (X) |
 | Right Gimbal | X5 Hall-Effect, 2 axes | Right of screen | Pitch (Y) + Roll (X), self-centering |
-| SA | 2-pos latching | Upper-left shoulder | On/off toggle |
-| SD | 2-pos latching | Upper-right shoulder | On/off toggle |
-| SB | 3-pos toggle | Upper-left shoulder | Up/mid/down |
-| SC | 3-pos toggle | Upper-right shoulder | Up/mid/down |
-| SE | 3-pos toggle | Left shoulder trigger | Up/mid/down |
-| SF | 3-pos toggle | Right shoulder trigger | Up/mid/down |
-| S1 | Scroll wheel (analog) | Left shoulder | Rotary with center detent |
-| S2 | Scroll wheel (analog) | Right shoulder | Rotary with center detent |
-| T1-T4 | Trim buttons | Around gimbals (or touchscreen-only) | Under investigation |
-| 6 front buttons | Momentary | Front face | Under investigation |
+| SA | 2-pos latching | Top-left shoulder | On/off toggle |
+| SB | 3-pos toggle | Top-left shoulder (next to SA) | Up/mid/down |
+| SC | 3-pos toggle | Top-right shoulder (next to SD) | Up/mid/down |
+| SD | 2-pos latching | Top-right shoulder | On/off toggle |
+| SE | 3-pos toggle | Back-left (flanking module bay) | Up/mid/down |
+| SF | 3-pos toggle | Back-right (flanking module bay) | Up/mid/down |
+| S1 | Potentiometer (smooth) | Left shoulder | Large center detent |
+| S2 | Potentiometer (notched) | Right shoulder | No center detent, notches on rotation |
+| T1-T4 | Trim buttons | Front face, around gimbals | Physical buttons confirmed |
+| 6-pos switch | Rotary selector | Front face, center | Single control, 6 discrete positions |
 
 Sticks are removable and stow in compartments on the back. Upgradeable to AG01 Nano CNC aluminum gimbals. Low-tension spring set included.
 
@@ -199,7 +199,7 @@ The MT8788 SoC includes sensor interfaces originally designed for a phone/tablet
 |--------|------|-------------|-----|--------|---------------|
 | IMU (6-axis) | ICM-42607 | 0x68/0x69 | i2c@11011000 | Present | Head tracking, tilt control, crash detection |
 | Magnetometer | Unknown | 0x0c | i2c@11011000 | Present | Compass heading for GCS |
-| GPS | MT6631 combo | N/A | Internal | Present | Radio position, RTH distance, geofencing |
+| GPS | MT6631 combo | N/A | Internal | Hardware present, not exposed to apps | MadsTech reports no GPS detection in Android GPS apps; hardware exists in device tree but may lack driver/permissions |
 | ALS/Proximity | Unknown | 0x1e | i2c@1100f000 | Present | Auto-brightness |
 | NFC | Unknown | 0x08 | i2c@1100f000 | Present | Model/bind pairing? |
 | Camera (main) | Unknown | Various | i2c@11009000 | Wired, not populated | No camera module installed |
@@ -217,6 +217,24 @@ The IMU and GPS are particularly interesting for GCS applications — the radio 
 | USB-C (charge) | Bottom edge | USB PD charging |
 | 3.5mm audio | Bottom edge | Headphone jack |
 | Nano module bay | Top edge | External RF module (ELRS, etc.) |
+
+## HDMI Input Latency
+
+Per MadsTech testing with HDZero as a fixed-latency baseline:
+- HDZero VRX → HDZero goggles (HDMI): 6.4ms first pixel, 21.2ms full frame
+- HDZero VRX → AX12 (HDMI in): 144.2ms first pixel, 167.6ms full frame
+- Added latency from AX12 HDMI input: **~140ms**
+
+The display uses a smartphone-style panel that reads out in portrait orientation (right-to-left in landscape), adding to the perceived latency. Suitable for fixed-wing, long-range, and ground vehicles. Not suitable for proximity freestyle or racing.
+
+The AX12 supports MAVLink pass-through over ELRS, allowing QGroundControl telemetry directly on the touchscreen without separate telemetry radios.
+
+## Power
+
+- Dual 21700 cells, 10,000 mAh total capacity
+- USB-C PD charging port (bottom edge)
+- Battery fuel gauge reports 2946mAh (discrepancy under investigation)
+- RT9465 charger IC on I2C
 
 ## Detailed References
 

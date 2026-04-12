@@ -57,7 +57,7 @@ The UMBUS library parses 0xA6 sync frames as:
 - `frame[5+]` = data payload -> `_UMBUS_MSG.ptr[0x8]`
 - Data length = `frame[1] - 6`
 
-For our 0x15 frame: data payload = bytes 5-19 (15 bytes), UMBUS CRC at byte 20.
+For the 0x15 frame: data payload = bytes 5-19 (15 bytes), UMBUS CRC at byte 20.
 
 ## CRSF Protocol Reference
 
@@ -138,7 +138,7 @@ Reads the standard `crsfLinkStatistics_t` struct from a `crsf_header_s` pointer:
 - Computes `downlink_RSSI / 10` using multiply-by-205-then-shift trick
 - Reports downlink_LQ and downlink_RSSI/10 to `AppRadioControl`
 
-This function would only be called if a CRSF type 0x14 frame arrived. In idle captures, we observe only type 0x3A (HANDSET) frames.
+This function would only be called if a CRSF type 0x14 frame arrived. In idle captures, only type 0x3A (HANDSET) frames are observed.
 
 ### QElrsModule::packRxed type dispatch (0x151e46c)
 

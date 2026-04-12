@@ -102,8 +102,8 @@ This is an ongoing reverse engineering effort. If you have an AX12 and want to h
 1. Run the tools and share captures from different states (flying, binding, different models)
 2. Test the DSC port loopback trick documented in the Bardwell video
 3. Help identify unknown fields in the UMBUS protocol
-4. Try unlocking the bootloader (`fastboot flashing unlock`) — we haven't risked it yet
+4. Try unlocking the bootloader (`fastboot flashing unlock`) — not yet attempted
 
 ## License
 
-This research is provided for educational and development purposes. The AX12 hardware and Flyshark software are products of RadioMaster. This project documents publicly observable behavior of a device we own.
+This research is provided for educational and development purposes. The AX12 hardware and Flyshark software are products of RadioMaster. This project documents publicly observable behavior of a personally owned device.
