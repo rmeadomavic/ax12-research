@@ -175,3 +175,40 @@ The app checks for updates at:
 - Update UI: RcSetFirmware settings page
 - MCU firmware: via QSharkFwControl (UMBUS firmware update protocol)
 - ELRS firmware: via ELRS backpack WiFi or top USB port
+
+
+## QML UI Architecture
+
+Main entry: qrc:/Qml/RCAX12V2/Ax12Main.qml (version 'V2')
+
+### Settings Pages (20)
+
+| Page | Purpose |
+|------|---------|
+| RcSetApp | Application settings |
+| RcSetBarModel | Model selection bar |
+| RcSetChLock | Channel lock configuration |
+| RcSetChMixes | Channel mixer editor |
+| RcSetChOut | Channel output/endpoint editor |
+| RcSetCurvePick | Rate/expo curve picker |
+| RcSetElrsV3 | ELRS v3 module settings |
+| RcSetFailsafe | Failsafe behavior configuration |
+| RcSetFirmware | MCU/ELRS firmware update |
+| RcSetFirmwareApp | Android app firmware update |
+| RcSetJSModePick | Joystick mode picker (Mode 1/2/3/4) |
+| RcSetModelList | Model list and selector |
+| RcSetPreCheck | Pre-flight safety checks |
+| RcSetSrcList | Source/input list |
+| RcSetSystem | System-level settings |
+| RcSetTelNotify | Telemetry alert/notification config |
+| RcSetTemplate | Model template management |
+| RcSetTimer | Timer configuration |
+| AppSharkFcSetting | Flight controller settings |
+
+### Camera/Video QML
+
+The HDMI video input uses Qt6 Multimedia:
+- Camera object with start()/stop() control
+- VideoOutput with PreserveAspectFit fill mode
+- 500ms active-check timer (checkCameraActiveTimer)
+- cameraUI.cameraIsActive flag for state tracking
