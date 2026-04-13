@@ -24,12 +24,12 @@ The AT32 MCU handles all physical inputs (gimbals, switches, pots) and controls 
 
 | Document | Description |
 |----------|-------------|
-| **[Root & Setup Guide](docs/root-guide.md)** | Install Termux, Tailscale, Claude Code CLI, get root access |
-| **[Hardware Map](docs/hardware-map.md)** | Architecture overview, key classes, system specs |
-| **[UMBUS Protocol](docs/umbus-protocol.md)** | Complete serial protocol specification with frame formats |
-| **[Device Tree Analysis](docs/device-tree.md)** | SoC peripherals: UARTs, SPI, I2C, GPIO, sensors |
-| **[System Audit](docs/system-audit.md)** | Partitions, kernel modules, device nodes, sysfs |
-| **[Native Library Analysis](docs/native-lib-analysis.md)** | 25MB .so reverse engineering: classes, methods, constants |
+| **[Root & Setup Guide](docs/guides/root-guide.md)** | Install Termux, Tailscale, Claude Code CLI, get root access |
+| **[Hardware Map](docs/hardware/hardware-map.md)** | Architecture overview, key classes, system specs |
+| **[UMBUS Protocol](docs/protocol/umbus-protocol.md)** | Complete serial protocol specification with frame formats |
+| **[Device Tree Analysis](docs/hardware/device-tree.md)** | SoC peripherals: UARTs, SPI, I2C, GPIO, sensors |
+| **[System Audit](docs/hardware/system-audit.md)** | Partitions, kernel modules, device nodes, sysfs |
+| **[Native Library Analysis](docs/software/native-lib-analysis.md)** | 25MB .so reverse engineering: classes, methods, constants |
 
 ## Tools
 
@@ -52,13 +52,13 @@ su 0 /path/to/python3 tools/monitor.py
 ## Key Findings
 
 ### Root Access
-The AX12 ships with a factory root binary at `/system/xbin/su`. No exploit needed — just run `su 0 <command>` from Termux. See [Root Guide](docs/root-guide.md) for full setup instructions.
+The AX12 ships with a factory root binary at `/system/xbin/su`. No exploit needed — just run `su 0 <command>` from Termux. See [Root Guide](docs/guides/root-guide.md) for full setup instructions.
 
 ### UMBUS Protocol
-The MCU sends 4 frame types at different rates: channel data (25Hz), heartbeat (4Hz), ELRS telemetry (5Hz), and extended status (~3Hz). The app responds with polling requests, heartbeat acks, and config at 0.5-2Hz. Total bandwidth is ~2.4 KB/s on a 921.6 kbps link, using only ~2% of capacity. See [UMBUS Protocol](docs/umbus-protocol.md).
+The MCU sends 4 frame types at different rates: channel data (25Hz), heartbeat (4Hz), ELRS telemetry (5Hz), and extended status (~3Hz). The app responds with polling requests, heartbeat acks, and config at 0.5-2Hz. Total bandwidth is ~2.4 KB/s on a 921.6 kbps link, using only ~2% of capacity. See [UMBUS Protocol](docs/protocol/umbus-protocol.md).
 
 ### Software Stack
-The Flyshark app is a Qt6/QML application with embedded Lua 5.3 scripting (EdgeTX-compatible). It includes a full ground control station with 30+ map providers, terrain elevation, mission planning, AHRS display, and RTSP video streaming. The native library exposes 250+ classes. See [Native Library Analysis](docs/native-lib-analysis.md).
+The Flyshark app is a Qt6/QML application with embedded Lua 5.3 scripting (EdgeTX-compatible). It includes a full ground control station with 30+ map providers, terrain elevation, mission planning, AHRS display, and RTSP video streaming. The native library exposes 250+ classes. See [Native Library Analysis](docs/software/native-lib-analysis.md).
 
 ### 33 Channels
 The system supports 33 output channels (indices 0-32) with per-channel reverse, slow motion, min/max limits, curves, dual rates, and multi-source mixing.
@@ -82,8 +82,8 @@ Custom Lua scripts can be placed at `/storage/emulated/0/AX12LUA/` for widgets, 
 
 ## Work in Progress
 
-- [x] Gimbal axis-to-stick mapping (see hardware-map.md)
-- [x] Switch and pot channel mapping (see hardware-map.md)
+- [x] Gimbal axis-to-stick mapping (see [hardware-map.md](docs/hardware/hardware-map.md))
+- [x] Switch and pot channel mapping (see [hardware-map.md](docs/hardware/hardware-map.md))
 - [ ] ELRS telemetry field identification (RSSI, LQ, SNR bytes)
 - [ ] Magisk persistent root (dm-verity blocks patched boot images)
 - [ ] DSC port USB loopback trick (gamepad mode for gimbal access)

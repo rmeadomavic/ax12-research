@@ -54,7 +54,7 @@
 
 ## UMBUS Protocol Summary
 
-RadioMaster's internal bus protocol. Full spec: [umbus-protocol.md](umbus-protocol.md)
+RadioMaster's internal bus protocol. Full spec: [umbus-protocol.md](../protocol/umbus-protocol.md)
 
 | Type | Size | Direction | Rate | Purpose |
 |------|------|-----------|------|---------|
@@ -81,7 +81,7 @@ Bytes 18+: unsigned 16-bit LE channel outputs (center = 0x8000)
 
 ## Software Architecture
 
-Full analysis: [native-lib-analysis.md](native-lib-analysis.md)
+Full analysis: [native-lib-analysis.md](../software/native-lib-analysis.md)
 
 ```
 QML UI ─── QML Singletons ─── Communication ─── UMBUS Engine ─── CRSF Engine
@@ -111,12 +111,12 @@ QML UI ─── QML Singletons ─── Communication ─── UMBUS Engine �
 
 ### Lua Scripting
 
-Embedded Lua 5.3 VM with ROM table support (NodeMCU lineage patch). Full details: [lua-scripting.md](lua-scripting.md)
+Embedded Lua 5.3 VM with ROM table support (NodeMCU lineage patch). Full details: [lua-api.md](../software/lua-api.md)
 - Scripts at `/sdcard/AX12LUA/SCRIPTS/TOOLS/`
 - Types: tools, mixes, widgets (follows OpenTX/EdgeTX `return {init=..., run=...}` convention)
 - Custom modules: `luaopen_bitmap` (LCD), `luaopen_etxdir` (dirs), `luaopen_lvgl` (UI framework)
 - Standard EdgeTX API: `crossfireTelemetryPush/Pop`, LCD drawing, input reading
-- Serial bridge: `luaSetGetSerialByte()` exists but serial functions are **dead stubs** on AX12 (see [Lua API](flyshark-lua-api.md#9-serial-port-access--dead-stubs))
+- Serial bridge: `luaSetGetSerialByte()` exists but serial functions are **dead stubs** on AX12 (see [Lua API](../software/lua-api.md#9-serial-port-access--dead-stubs))
 
 ### Channel System
 
@@ -331,8 +331,8 @@ User-created model files use Unix timestamps as filenames (e.g., `1681234567.rcm
 
 - [Device Tree Analysis](device-tree.md) — Full SoC peripheral map
 - [System Audit](system-audit.md) — /dev, /sys, partitions, modules
-- [UMBUS Protocol](umbus-protocol.md) — Complete protocol specification
-- [Native Library Analysis](native-lib-analysis.md) — Class hierarchy, APIs, constants
-- [Root & Setup Guide](root-guide.md) — How to set up a dev environment
-- [ELRS Telemetry Analysis](elrs-telemetry-analysis.md) — RF link telemetry decoding
-- [Lua Scripting](lua-scripting.md) — Lua VM details, installed scripts, custom modules
+- [UMBUS Protocol](../protocol/umbus-protocol.md) — Complete protocol specification
+- [Native Library Analysis](../software/native-lib-analysis.md) — Class hierarchy, APIs, constants
+- [Root & Setup Guide](../guides/root-guide.md) — How to set up a dev environment
+- [ELRS Telemetry Analysis](../protocol/elrs-telemetry-analysis.md) — RF link telemetry decoding
+- [Lua API](../software/lua-api.md) — Lua VM details, installed scripts, API reference

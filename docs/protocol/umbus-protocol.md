@@ -258,7 +258,7 @@ checksum = umbus_crc8(frame[1:-1], init)
 
 The firmware also maintains a parallel XOR accumulator as a fallback: if the CRC doesn't match, a simple XOR of the same bytes is checked before declaring an error.
 
-See `docs/checksum-investigation.md` for the full binary analysis.
+See [checksum-investigation.md](checksum-investigation.md) for the full binary analysis.
 
 ## Frame Type Summary
 

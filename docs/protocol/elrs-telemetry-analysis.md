@@ -245,5 +245,5 @@ To capture meaningful RSSI/LQ/SNR data, a capture with a **bound and active rece
 ## Key Files
 
 - `/data/data/com.termux/files/home/ax12-research/captures/idle-raw-10s.bin` - Raw binary capture
-- `/data/data/com.termux/files/home/ax12-research/captures/idle-analysis.md` - Initial frame analysis
+- `../../data/idle-analysis.md` - Initial frame analysis
 - `/data/data/com.termux/files/home/ax12-research/native-lib/lib/arm64-v8a/libRadioMasterAX_arm64-v8a.so` - Native library
