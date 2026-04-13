@@ -239,10 +239,64 @@ Peripherals confirmed via /sys, /dev, and device-tree probing (2026-04-13):
 |------|----------|---------|
 | Mini HDMI In | Top edge | FPV video feed (DJI/Walksnail/HDZero/OpenIPC). Internally: HDMI→analog→RN6752M→MIPI CSI-2 |
 | Mini HDMI Out | Top edge | Mirror display to external monitor |
-| USB-C (data) | Top edge | Trainer port, ADB, data transfer. **Gadget mode only** (ADB/MTP/RNDIS). USB OTG host mode disabled — CONFIG_USB_MTK_OTG, CONFIG_SSUSB_DRV, CONFIG_SSUSB_MTK_XHCI all unset. XHCI host controller silicon present but glue driver not compiled. Custom kernel required for host mode. |
+| USB-C (data) | Top edge | Trainer port, ADB, data transfer. Default: gadget mode (ADB/MTP/RNDIS). **USB OTG host mode: hardware supported, software-switchable via sysfs (no custom kernel needed).** See [USB OTG Host Mode](#usb-otg-host-mode) below. |
 | USB-C (charge) | Bottom edge | USB PD charging |
 | 3.5mm audio | Bottom edge | Headphone jack |
 | Nano module bay | Top edge | External RF module (ELRS, etc.) |
+
+## USB OTG Host Mode
+
+**Status: Hardware supported, software-switchable via sysfs. NEEDS PHYSICAL TESTING.**
+
+Previous documentation stated USB OTG required a custom kernel (`CONFIG_USB_MTK_OTG`, `CONFIG_SSUSB_DRV`, `CONFIG_SSUSB_MTK_XHCI` unset). This is incorrect — the MT8788 USB stack exposes userspace-accessible sysfs controls that trigger the TCPC (Type-C Port Controller) state machine to switch between device and host roles.
+
+### Key Discovery
+
+The `device_host_gpio_attr` at `/sys/devices/platform/device_host_gpio/` is **world-writable**. Writing `1` triggers a TCPC transition to `AttachWait.SRC` (host/source mode).
+
+### Enable Host Mode
+
+```bash
+# Step 1: Toggle the device/host GPIO (triggers TCPC role switch)
+echo 1 > /sys/devices/platform/device_host_gpio/device_host_gpio_attr
+
+# Step 2: Set MUSB controller to host mode (cmode: 0=device, 1=host, 2=charge-only)
+echo 1 > /sys/devices/platform/11200000.usb3/musb-hdrc/cmode
+
+# Step 3: Set USB-C port role to DFP (downstream-facing port = host)
+echo dfp > /sys/class/dual_role_usb/dual-role-type_c_port0/mode
+```
+
+### Alternative Method
+
+USB OTG can also be toggled via the **MTK Engineer Mode** app's `UsbOtgSwitch` activity, which writes the same sysfs values.
+
+### Hardware Details
+
+| Component | Details |
+|-----------|---------|
+| MUSB controller | DesignWare MUSB-HDRC at `11200000.usb3` |
+| MUSB cmode values | 0 = device, 1 = host, 2 = charge-only |
+| xHCI host controller | `11200000.usb3_xhci` — present in device tree, driver binds only when a device is connected |
+| TCPC transition | `AttachWait.SRC` on GPIO assert (host/source role) |
+| GPIO control | `/sys/devices/platform/device_host_gpio/device_host_gpio_attr` (world-writable) |
+
+### Loaded USB Class Drivers
+
+All standard USB host class drivers are already loaded in the stock kernel:
+
+- **Hub** — USB hub support
+- **HID** — Keyboards, mice, gamepads
+- **Mass storage** — USB drives, SD readers
+- **Audio** — USB audio devices
+- **Ethernet** — r8152 (Realtek), asix, ax88179_178a (USB Ethernet adapters)
+
+### What Remains
+
+**Physical testing required.** The sysfs interfaces respond correctly and the TCPC state machine transitions, but no physical USB-C OTG adapter + device test has been performed to confirm:
+- Full device enumeration
+- Power delivery to connected device (VBUS sourcing)
+- Functional data transfer (HID input, storage mount, etc.)
 
 ## Video Input Pipeline
 

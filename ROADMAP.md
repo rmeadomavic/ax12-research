@@ -30,11 +30,17 @@ Edge cases and deeper analysis that would complete the picture.
 - **PWM output mapping** — How do the 33 logical channels map to physical PWM outputs on the MCU? External module bay pin assignments are unknown.
 - **Native library decompilation** — The 25MB .so has 13,000+ dynamic symbols. Current analysis uses strings/readelf only. Targeted Ghidra decompilation of UMBUS engine functions would accelerate protocol understanding.
 
+## In Progress
+
+Active work with partial results.
+
+- **USB OTG host mode** — Sysfs toggle found: `device_host_gpio_attr` is world-writable, MUSB cmode and dual-role port mode are switchable from userspace. No custom kernel needed. **Needs physical testing** with a USB-C OTG adapter and connected device to confirm full enumeration, VBUS sourcing, and data transfer. See [hardware-map.md USB OTG section](docs/hardware/hardware-map.md#usb-otg-host-mode).
+
 ## Future
 
 Longer-term projects that build on the research.
 
-- **Custom kernel / USB OTG** — The MT8788 supports USB OTG but it is disabled in the stock kernel config. A custom kernel could enable USB host mode on the DSC port, opening gamepad/HID input and external peripherals.
+- ~~**Custom kernel / USB OTG**~~ — Moved to **In Progress** (see below).
 - **ATAK plugin** — The AX12 has a functional GCS with IMU and map engine. An ATAK (Android Team Awareness Kit) integration could turn it into a tactical UAV controller.
 - **Python package** — Package `umbus.py` and the analysis tools as a pip-installable library for broader community use.
 - **Lua tools and widgets** — Build custom Lua scripts leveraging the LVGL bindings for on-device dashboards, telemetry overlays, and protocol diagnostics.
