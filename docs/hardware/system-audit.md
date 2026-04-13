@@ -388,3 +388,30 @@ Based on this audit, the following hardware interfaces are most relevant to RC r
 8. **ADC**: AUXADC with temperature and custom RF parameter channels
 9. **Bluetooth**: Integrated BT via WMT for wireless peripherals/trainers
 10. **WiFi**: Integrated WiFi for network connectivity, firmware updates
+
+
+## Engineering Mode Apps
+
+### ZTE Engineer (com.zte.engineer)
+Suggests ZTE is the ODM (Original Design Manufacturer) for the AX12 PCB.
+
+| Activity | Purpose |
+|----------|---------|
+| EngineerCode | Engineering code entry |
+| ProduceInfoListView | Production/calibration info |
+| BoardCode | Board/PCB identification |
+| NetlockInfo | Carrier lock status |
+| TestReceiveActivity | Receive test |
+| AlexWiFiTest | WiFi test utility |
+| AlexBackCameraTest | Back camera test |
+| AlexFrontCamera | Front camera test |
+| **GPIO** | GPIO control/test |
+| **SerialPort** | Serial port test |
+
+The GPIO and SerialPort activities may provide direct hardware access for testing.
+
+### MediaTek Engineer Mode (com.mediatek.engineermode)
+Standard MTK engineer mode with WiFi, RF desense, channel lock, tethering, and AT command capabilities. The USB OTG sysfs toggle was discovered through this app's Connectivity section.
+
+### MTK Logger (com.mediatek.mtklogger)
+System-level logging with debug toolbox. Can capture modem, network, and GPS logs.
