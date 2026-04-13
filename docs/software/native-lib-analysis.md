@@ -638,3 +638,39 @@ The Flyshark app is built on a QGroundControl fork with RadioMaster-specific ext
 | RadioTelemetry | Radio telemetry processing |
 | SimuDirHandle | Simulator directory handling |
 | LcdUpdateThread | Display update thread |
+
+
+## UMBUS Function Sizes (from ELF symbol table)
+
+### Core Engine
+| Function | Size | Purpose |
+|----------|------|---------|
+| UMBUS_Init | 52B | Initialize engine state |
+| UMBUS_Decode | 1332B | Main frame decoder (significant logic) |
+| UMBUS_Fill | 108B | Fill frame buffer with data |
+| UMBUS_StartPack | 424B | Begin multi-frame config transfer |
+| UMBUS_EndPack | 160B | End multi-frame transfer |
+| UMBUS_GetPack | 272B | Retrieve packed data |
+| UMBUS_Reset | 88B | Reset engine state |
+
+### Pack Receivers (sorted by complexity)
+| Class | Size | Handles |
+|-------|------|---------|
+| AppSharkFcCtr | 3008B | FC commands, AHRS, navigation, missions |
+| AppRadioControl | 2780B | Channel data (0x57), radio config |
+| QSharkFwControl | 1996B | Firmware update protocol |
+| QSharkRFModule | 1660B | ELRS RF module telemetry + config |
+| QSharkFwControl (log) | 1532B | FW update logging |
+| QGimbalControl | 1316B | External gimbal commands |
+| QComPackControl | 1292B | Communication pack control |
+| QSharkFwControl (FW RX) | 976B | Firmware data receiver |
+| AppSharkFcSetting | 920B | FC settings push/pull |
+| AppFcTaskCtr | 704B | FC task management |
+| QSensorControl | 516B | Sensor data (IMU, temp) |
+| QFcStateViewControl | 304B | FC state display |
+| AppComHub (dispatcher) | 88B | Route to handlers |
+| QSysApp | 4B | Stub (no-op) |
+| QMapControl | 4B | Stub (no-op) |
+
+UMBUS_Decode at 1332 bytes is the most complex single function in the engine,
+containing the full frame parsing, CRC validation, and type dispatch logic.
