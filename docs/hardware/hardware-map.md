@@ -602,3 +602,16 @@ With hardware modifications (SIM card adapter, cellular antenna, RF frontend), t
 - Remote operation beyond WiFi range
 
 This is NOT practical without significant PCB modification and is listed for completeness only. USB LTE dongle via OTG is the recommended approach.
+
+
+## Cross-Referenced Specifications (from reviews)
+
+| Spec | Value | Source |
+|------|-------|--------|
+| Weight | ~650g | unmanned.tech review |
+| Screen brightness | 1000 nit (outdoor-readable) | unmanned.tech review |
+| Max TX power | 250 mW (dynamic power) | unmanned.tech review |
+| Battery runtime | ~6 hours | unmanned.tech review |
+| Gimbal compatibility | AGO1 replacements | unmanned.tech review |
+| RF chip | Semtech LR1121 (2.4 GHz or 900 MHz) | confirmed |
+| HDMI jitter | Reported with RunCam OpenIPC sources | unmanned.tech review |
