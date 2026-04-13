@@ -63,7 +63,7 @@ GMS_KILL_PACKAGES = [
 BIG_CORES = [4, 5, 6, 7]
 GOVERNOR_PATH_TEMPLATE = "/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor"
 TARGET_GOVERNOR = "performance"
-DEFAULT_GOVERNOR = "schedutil"
+DEFAULT_GOVERNOR = "schedplus"
 
 # build.prop marker for our additions
 BUILDPROP_MARKER_START = "# --- AX12 Tier 2 Optimizations (do not edit) ---"
