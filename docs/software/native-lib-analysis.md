@@ -478,3 +478,86 @@ The library contains 200+ `STR_*` constants for UI localization. Key RC-specific
 9. **ADC Calibration**: `setAdcCalibration(int)` suggests the MCU's ADC values are calibrated through the app, with calibration data synced between app and MCU via `syncRcCfgDataToDev()`.
 
 10. **Oscilloscope Feature**: `QSensorControl` has oscilloscope/waveform display capability — likely for viewing raw sensor data (IMU, ADC) in real-time.
+
+
+## UMBUS Symbol Map (from libRadioMasterAX_arm64-v8a.so, 24MB, 266,670 strings)
+
+### Core UMBUS Engine Functions
+| Symbol | Purpose |
+|--------|---------|
+| UMBUS_Init | Initialize the UMBUS engine |
+| UMBUS_Decode | Decode incoming UMBUS frames |
+| UMBUS_Fill | Fill a frame buffer with data |
+| UMBUS_StartPack | Begin multi-frame config transfer |
+| UMBUS_EndPack | End multi-frame config transfer |
+| UMBUS_GetPack | Retrieve packed data from transfer |
+| UMBUS_Msg_Pack | Message packing struct/type |
+| UMBUS_Reset | Reset the engine state |
+
+### UMBUS Address Constants
+| Constant | Target |
+|----------|--------|
+| COM_UMBUS_ADD_RC | Radio controller (AT32 MCU) |
+| COM_UMBUS_ADD_FC | Flight controller (external) |
+| COM_UMBUS_ADD_GIMBAL | Camera gimbal (external) |
+
+### Error Messages (from UMBUS_Decode)
+- UMBUS-ERROR %d:%s (generic error with code)
+- UMBUS-RX CHECKSUM ERROR %x : %x (expected vs received CRC)
+- UMBUS-RX LENGTH ERROR (frame size validation failed)
+- UMBUS-RX TIMEOUT.. (no data within timeout window)
+
+### Communication Hub Architecture
+
+AppComHub is the central message dispatcher:
+
+| Method | Source |
+|--------|--------|
+| uartPackReceived | Physical serial port (ttyS0) |
+| tcpPackReceived | Network TCP connection |
+| usbhidPackReceived | USB HID device |
+| umbusPackRxed | General UMBUS pack handler |
+| umbusDataPackRxed | Data-specific pack handler |
+
+Discovery: UMBUS protocol has THREE transport layers - UART, TCP, and USB HID.
+
+### UMBUS Pack Receivers (per controller)
+| Class | Responsibility |
+|-------|----------------|
+| AppRadioControl | Main radio/channel control |
+| QSharkRFModule | ELRS RF module (telemetry, link) |
+| QSensorControl | Sensor data (IMU, temperature) |
+| QGimbalControl | External gimbal control |
+| AppFcTaskCtr | Flight controller task management |
+| AppSharkFcCtr | Shark FC control interface |
+| AppSharkFcSetting | FC settings/configuration |
+| QFcStateViewControl | FC state display |
+| QMapControl | Map/navigation |
+| QComPackControl | Communication pack control |
+| QSharkFwControl | Firmware updates |
+| QSysApp | System application |
+
+### Firmware Update Protocol
+QSharkFwControl has:
+- umbusPackReceived - general packet handler
+- umbusRXED_FwUpdate - firmware update data receiver
+- umbusPackLog - packet logging for firmware updates
+
+### Transport Classes
+| Class | Function |
+|-------|----------|
+| QCommUsart | UART serial (ttyS0), primary transport |
+| QCommTcp | TCP/IP transport (UMBUS over network!) |
+| QSerialPortLinux | Linux serial port abstraction |
+| QSerialPortExt | Extended serial port features |
+
+Both QCommUsart and QCommTcp implement:
+- umbusFillToTxBuff(uint8_t* data, int len) - write to TX buffer
+- umbusRxPackCallBack(_UMBUS*, _UMBUS_MSG*) - receive callback
+
+### Implications
+
+1. UMBUS over TCP means remote control is architecturally supported - a laptop app could send UMBUS commands over WiFi/Tailscale
+2. USB HID input handler means external HID devices (SpaceMouse, gamepads) are wired into the control path
+3. The UMBUS_StartPack/EndPack/GetPack API confirms multi-frame config transfers exist (model sync protocol)
+4. Three-address scheme (RC/FC/GIMBAL) shows UMBUS was designed as a multi-device bus, not just SoC-to-MCU
