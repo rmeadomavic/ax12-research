@@ -130,3 +130,48 @@ Beyond RC control, the app is a full ground control station:
 4. **Three transports** — UART (primary), TCP (simulator/debug), USB-HID (PC); all speak UMBUS.
 5. **Dual UI** — Qt Quick/QML for main UI, LVGL for Lua script widgets.
 6. **Sole ttyS0 consumer** — All protocol research must go through strace while the app is running.
+
+
+## SpaceMouse 6DOF Input Modes
+
+The native library defines 6 SpaceMouse variants:
+- SpaceMouse A
+- SpaceMouse B
+- SpaceMouse C
+- SpaceMouse D
+- SpaceMouse E
+- SpaceMouse F
+
+Each likely maps the 6DOF axes (X/Y/Z translation + pitch/roll/yaw rotation) to different channel combinations. The SpaceMouse is a 3Dconnexion device that outputs USB HID events, which aligns with the AppComHub.usbhidPackReceived handler found in the native lib.
+
+## App Version Info
+
+| Field | Value |
+|-------|-------|
+| Package | com.Flyshark.RadioMasterAX |
+| Version | 1.0 (versionCode=1) |
+| Min SDK | 28 (Android 9) |
+| Target SDK | 35 (Android 15) |
+| First install | 2026-03-24 |
+| Qt framework | Qt 6.x |
+| Build date | Available via QSysApp.getBuildDate() |
+
+## AUX Serial Modes (complete list)
+
+| Mode | Description |
+|------|-------------|
+| None | Serial port inactive |
+| Telemetry In | Receive telemetry from external sensor |
+| SBUS Trainer | SBUS trainer input/output |
+| Debug | Debug output |
+| Lua | Lua script serial access (STUB - not functional) |
+| GPS sensor | External GPS receiver input |
+| SpaceMouse A-F | 6DOF SpaceMouse input (6 axis mapping variants) |
+
+## Firmware Update
+
+The app checks for updates at:
+- fly-shark.com/FileDownload/FirmwareFile/RadioMasterAX.apk
+- Update UI: RcSetFirmware settings page
+- MCU firmware: via QSharkFwControl (UMBUS firmware update protocol)
+- ELRS firmware: via ELRS backpack WiFi or top USB port
