@@ -234,8 +234,9 @@ const SWITCH_MID_LO = 48000;
 const SWITCH_MID_HI = 50000;
 const GIMBAL_RANGE = 600;
 
-// Gimbal bar labels
-const gNames = ['LX','LY','RX','RY'];
+// Gimbal bar labels — indices are interleaved across sticks, not contiguous
+const gNames = ['LX(Yaw)','LY(Thr)','RX(Roll)','RY(Pit)'];
+const gMap = [0, 2, 3, 1]; // g index for each bar: LX=g[0], LY=g[2], RX=g[3], RY=g[1]
 const $gimbals = [];
 const $gbarFills = [];
 const $gbarVals = [];
@@ -331,21 +332,22 @@ es.addEventListener('frame', function(e) {
   $fps.textContent = Math.round(d.fps);
   $nch.textContent = ch.length;
 
-  // Stick positions
+  // Stick positions — gimbal indices are interleaved, not contiguous per stick
+  // Left stick: g[0]=X(Yaw), g[2]=Y(Throttle)  Right stick: g[3]=X(Roll), g[1]=Y(Pitch)
   const lx = 50 + (g[0] / GIMBAL_RANGE * 45);
-  const ly = 50 - (g[1] / GIMBAL_RANGE * 45);
-  const rx = 50 + (g[2] / GIMBAL_RANGE * 45);
-  const ry = 50 - (g[3] / GIMBAL_RANGE * 45);
+  const ly = 50 - (g[2] / GIMBAL_RANGE * 45);
+  const rx = 50 + (g[3] / GIMBAL_RANGE * 45);
+  const ry = 50 - (g[1] / GIMBAL_RANGE * 45);
   $stickL.style.left = Math.max(5, Math.min(95, lx)) + '%';
   $stickL.style.top = Math.max(5, Math.min(95, ly)) + '%';
   $stickR.style.left = Math.max(5, Math.min(95, rx)) + '%';
   $stickR.style.top = Math.max(5, Math.min(95, ry)) + '%';
-  $slVal.textContent = g[0] + ', ' + g[1];
-  $srVal.textContent = g[2] + ', ' + g[3];
+  $slVal.textContent = g[0] + ', ' + g[2];
+  $srVal.textContent = g[3] + ', ' + g[1];
 
-  // Gimbal bars (centered, bidirectional)
+  // Gimbal bars (centered, bidirectional) — use gMap for interleaved index order
   for (let i = 0; i < 4; i++) {
-    const v = g[i];
+    const v = g[gMap[i]];
     const pct = Math.abs(v) / GIMBAL_RANGE * 50;
     if (v >= 0) {
       $gbarFills[i].style.left = '50%';

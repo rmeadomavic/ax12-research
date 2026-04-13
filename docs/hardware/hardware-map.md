@@ -178,6 +178,9 @@ Determined via live calibration tool (`tools/calibrator.py`):
 | G2 | Throttle | Left Y (non-centering) | 10-11 |
 | G3 | Roll / Aileron | Right X | 12-13 |
 
+**Note:** Gimbal indices are interleaved across sticks, not contiguous per stick.
+Left stick = G0 (X) + G2 (Y). Right stick = G3 (X) + G1 (Y). Verified by physical testing 2026-04-13.
+
 **Switch/channel mapping** (bytes 18+ of 0x57 frame, unsigned 16-bit LE):
 
 | Control | Channel | Idle Value | Notes |
