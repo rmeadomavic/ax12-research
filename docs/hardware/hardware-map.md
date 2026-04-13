@@ -577,3 +577,28 @@ The AX12 has separate input and output HDMI paths using different chips:
 The IT66121 register set is fully I2C-accessible. A mainline Linux DRM bridge driver exists (merged kernel 5.15+) but needs backporting for 4.4.
 
 The RN6752M adds minimal latency (1-3 scan lines, approximately 30-100 microseconds) as it is primarily a protocol converter, not an image signal processor. No public datasheet; register map available only under NDA.
+
+
+## Cellular Modem (Not Populated, Hardware Present)
+
+The MT8788's cellular modem is active with loaded firmware:
+
+| Property | Value |
+|----------|-------|
+| Baseband firmware | MOLY.LR12A.R2.MP.V109.4 |
+| Default network | LTE (type 9) |
+| CCCI devices | /dev/ccci_* present (modem IPC channel) |
+| SIM state | Not inserted |
+| Network interfaces | ccmni0-20 (21 cellular interfaces, all DOWN) |
+| RIL daemon | Not running (no SIM) |
+
+The modem firmware is loaded and initialized by the bootloader even though no SIM slot or cellular antenna is populated on the AX12 PCB. RadioMaster kept the modem active (likely because disabling it requires kernel/bootloader changes).
+
+### Theoretical LTE Capability
+
+With hardware modifications (SIM card adapter, cellular antenna, RF frontend), the AX12 could potentially support native 4G LTE. This would enable:
+- Direct cellular backhaul without USB OTG dongle
+- TAK Server connectivity over cellular
+- Remote operation beyond WiFi range
+
+This is NOT practical without significant PCB modification and is listed for completeness only. USB LTE dongle via OTG is the recommended approach.
