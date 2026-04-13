@@ -232,3 +232,36 @@ The AX12 is already competitive at stock settings. With optimization, it could b
 | 4. Kernel patches | High | Reflash stock | 30-50ms | ~40-55ms |
 
 ¹ Phase 3 (Direct Link) and deeper Phase 1 optimizations (BYPASS_PQ, ANTILATENCY, DELAYED_TRIGGER) require a kernel module — debugfs writes are non-functional in this build.
+
+
+## Root Cause Analysis (confirmed 2026-04-13)
+
+The HDMI input latency is caused by the video pipeline architecture:
+
+### Video Input Path
+
+
+The RN6752M is registered as a camera sensor (imgsensor) in MediaTek's HAL. This means ALL HDMI video passes through the full camera ISP stack:
+
+- 22+ tuning libraries loaded: HDR, scene detection, face capture, 4K, 1080p
+- Full 3A processing (AE/AWB/AF) applied to video that needs NONE of it
+- Noise reduction, color matrix, tone mapping all active
+- DECOUPLE mode adds triple buffering for compositing
+
+### Latency Breakdown (estimated)
+| Stage | Latency | Notes |
+|-------|---------|-------|
+| RN6752M decode | ~0.1ms | 1-3 scan lines |
+| MIPI CSI-2 transfer | ~1ms | Hardware, unavoidable |
+| ISP processing (3A/NR/HDR) | ~30-50ms | The big one - camera pipeline |
+| DECOUPLE mode buffering | ~35-53ms | 2-3 frames at 56.4Hz |
+| PQ pipeline (COLOR/CCORR/AAL) | ~10-15ms | Display post-processing |
+| Display panel response | ~5-10ms | LCD response time |
+| **Total** | **~80-140ms** | Matches observed 140ms |
+
+### Optimization Vectors
+1. **CAMSV raw passthrough** - Bypass ISP entirely, send raw frames to memory (documented in MediaTek Genio SDK)
+2. **Disable 3A on video input** - If possible in tuning library config
+3. **DIRECT_LINK display mode** - Skip DECOUPLE buffering (kernel module needed)
+4. **Disable PQ pipeline** - BYPASS_PQ display option (kernel module needed)
+5. **Reduce camera tuning** - Strip unnecessary .so libraries to prevent ISP stages from loading
