@@ -379,3 +379,52 @@ Full `lv_obj_set_style_*` and `lv_style_set_*` for: bg, border, outline, shadow,
 
 A probe script has been installed at `/sdcard/AX12LUA/SCRIPTS/TOOLS/test-api.lua`.
 Run it from the AX12's **Tools** menu. Results will be written to `/sdcard/AX12LUA/api-probe-results.txt` and will provide the definitive list of every symbol available at runtime, including values for all numeric constants.
+
+
+## Complete Lua API (confirmed from native lib strings)
+
+### Telemetry
+- getRSSI() — RF signal strength
+- getValue(source) — get source value by ID
+- getFieldInfo(name) — get telemetry field info
+- sportTelemetryPop() / sportTelemetryPush(sensor, frame, data) — S.PORT protocol
+- crossfireTelemetryPop() / crossfireTelemetryPush(command, data) — CRSF protocol
+
+### Model/Config
+- getFlightMode() — current flight mode
+- getGeneralSettings() — general radio settings
+- getLogicalSwitch(index) / getLogicalSwitchValue(index) — logical switch state
+- getOutput(index) / getOutputValue(index) — output channel value
+- getSourceInfo(index) / getSourceValue(index) / getSourceName(index) / getSourceIndex(name) — source inputs
+- getTimer(index) — timer value
+- defaultStick(index) — default stick value
+- defaultChannel(index) — default channel value
+- model — model data table
+
+### System
+- getDateTime() — date/time
+- getTime() — system time (ms)
+- getVersion() — firmware version string
+
+### Audio
+- playFile(path) — play audio file
+- playTone(freq, duration, pause) — play tone
+- playNumber(value, unit) — speak number
+- playDuration(seconds) — speak duration
+- playHaptic(duration, pause) — vibration feedback
+
+### Serial (STUBS — confirmed dead via disassembly)
+- serialRead() — reads nothing (bare ret instruction)
+- serialWrite(data) — writes nothing (bare ret instruction)
+
+### Shared Memory
+- setShmVar(name, value) — write to shared memory variable
+- getShmVar(name) — read from shared memory variable
+
+### Events
+- killEvents(key) — clear key event queue
+
+### Display Constants
+- GREY, WHITE — color constants for LCD drawing
+
+### Total: 31 registered functions (29 functional + 2 dead stubs)
