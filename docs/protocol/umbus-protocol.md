@@ -293,10 +293,10 @@ The MCU sends channel data to the app in 0x57 frames. The app processes mixing a
 - [x] Maximum number of channels in 0x57 frame: 33 (bytes 18-83 = 66 bytes / 2, indices 0-32)
 - [x] Baud rate: 921,600 baud verified via `stty -a -F /dev/ttyS0` (ST16650V2 UART, 8N1, MMIO 0x11002000)
 - [x] Serial lock: `LCK..ttyS0` confirms app_process64 PID holds exclusive access to ttyS0
+- [x] Gimbal axis-to-stick mapping: G0=Yaw/Left-X, G1=Pitch/Right-Y, G2=Throttle/Left-Y, G3=Roll/Right-X (confirmed via calibrator.py live testing)
 
 ### Unresolved
 
-- [ ] Gimbal axis-to-stick mapping (needs physical testing with one stick at a time)
 - [ ] Full gimbal value range (approximate -500 to +500 observed, full range unknown)
 - [ ] 0x15 field identification (which bytes are RSSI, LQ, SNR, TX power)
 - [ ] 0x10 sub-index purpose (what do sub-channels 0, 1, 2 represent)

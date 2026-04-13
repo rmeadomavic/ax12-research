@@ -23,7 +23,7 @@
 │                                                                     │
 │  Serial ports (all ST16650V2 UARTs, 8N1, clocal, no flow control):   │
 │  - ttyS0 @ 921600: UMBUS to MCU (MMIO 0x11002000) ✓ verified stty   │
-│  - ttyS1 @ 9600:   Silent, RTS/DTR asserted (MMIO 0x11003000) ✓     │
+│  - ttyS1 @ 460800: Silent, RTS/DTR asserted (MMIO 0x11003000) ✓     │
 │  - ttyS2 @ 9600:   Root-only (MMIO 0x11004000) — untested           │
 │                                                                     │
 │  SPI buses:                                                         │
@@ -285,10 +285,10 @@ All three serial ports use ST16650V2 UARTs with 8N1 framing and clocal (ignore m
 | Port | Baud | MMIO Base | Status | Notes |
 |------|------|-----------|--------|-------|
 | ttyS0 | 921600 | 0x11002000 | Active — owned by app_process64 (Flyshark) | UMBUS protocol link to AT32 MCU. `LCK..ttyS0` lockfile present. No flow control. |
-| ttyS1 | 9600 | 0x11003000 | Silent — no process has it open | RTS/DTR modem control lines asserted (something configured them). Probed with 7 command types (newline, AT, `?`, version, help, 0x00, 0xA6 sync) at 9600 baud — zero bytes received. May be boot-only debug output, TX-only wiring, or require a different baud rate. |
+| ttyS1 | 460800 | 0x11003000 | Silent — no process has it open | RTS/DTR modem control lines asserted (something configured them). Previously probed at 9600 baud (wrong rate) — zero bytes received. Actual baud rate is 460800 (verified via stty). Re-probing at correct baud rate needed. |
 | ttyS2 | 9600 | 0x11004000 | Root-only, untested | Permissions restrict access. No traffic testing performed. |
 
-Baud rates verified 2026-04-13 via `su 0 stty -a -F /dev/ttyS<n>`.
+Baud rates verified 2026-04-13 via `su 0 stty -a -F /dev/ttyS<n>`. Note: ttyS1 was previously documented as 9600 baud but is actually configured at 460800.
 
 ## Model Configuration Storage
 

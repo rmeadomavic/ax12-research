@@ -1,10 +1,10 @@
 # Native Library Analysis: libRadioMasterAX_arm64-v8a.so
 
 **File:** `lib/arm64-v8a/libRadioMasterAX_arm64-v8a.so`  
-**Size:** 25,233,176 bytes (24MB)  
+**Size:** 25,233,176 bytes (~25MB)  
 **Type:** ELF 64-bit LSB shared object, ARM aarch64  
 **Strings:** 266,670 total  
-**Dynamic symbols:** 13,026  
+**Dynamic symbols:** 13,023  
 
 ## Architecture Overview
 

@@ -19,7 +19,7 @@ Partially understood or less critical research areas.
 - **Unknown bytes in 0x57 frames** — Channel data and gimbal axes are mapped, but several bytes in the 87-byte frame remain unidentified (bytes 4-5, 14-17, and trailing bytes after channel data).
 - **Gimbal calibration protocol** — The calibrator tool maps axes via live observation, but the MCU-side calibration process (center/endpoint storage, dead zone) is undocumented.
 - **Firmware update protocol** — `QSharkFwControl` manages MCU and ELRS backpack updates. The update mechanism (frame type, transfer protocol, verification) is unanalyzed.
-- **Model file format (.rcm)** — Files are flat binary structs with known load/save functions in the native library, but the field layout is not yet decoded.
+- **Model file format (.rcm)** — Files are flat binary structs. Partially decoded: magic (0x12345678), model name, icon path, timestamp, version, flags, trim values, and rate values identified. Mixer configuration and channel endpoint record internals remain unknown.
 
 ## Low Priority
 
