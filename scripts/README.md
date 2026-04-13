@@ -1,21 +1,37 @@
-# Scripts
+# Lua Scripts
 
-Device-side scripts that run on the AX12 itself, as opposed to the host-side Python tools in `tools/`.
+On-device Lua scripts for the RadioMaster AX12 Flyshark runtime.
 
-## Files
+## Deployment
 
-| Script | Language | Description |
-|--------|----------|-------------|
-| `ax12-dashboard.lua` | Lua 5.3 | On-device dashboard widget for the Flyshark Lua VM |
+1. Copy scripts to `/sdcard/AX12LUA/SCRIPTS/TOOLS/` (root may be needed for permissions)
+2. Open the Flyshark app → **Tools** menu → select the script by name
 
-## Deploying to AX12
+## Scripts
 
-Copy Lua scripts to the AX12's script directory:
+| Script | Purpose |
+|--------|---------|
+| `ax12-dashboard.lua` | Custom dashboard: gimbals, channels, switches, battery, ELRS link stats. Color LCD with adaptive layout. |
+| `test-api.lua` | Probes all Lua runtime globals and writes results to `/sdcard/AX12LUA/api-probe-results.txt` |
+| `shm-probe.lua` | Tests `getShmVar`/`setShmVar` shared memory (100+ indices and string keys), writes to `/sdcard/AX12LUA/shm-probe-results.txt` |
 
-```bash
-cp scripts/ax12-dashboard.lua /sdcard/AX12LUA/SCRIPTS/TOOLS/
+## Script Structure
+
+Every script must return a table with `init` and `run` callbacks:
+
+```lua
+-- TNS|Script Title|TNE
+local function init()  end
+local function run(event) --[[ called each frame ]] end
+return { init=init, run=run }
 ```
 
-Then open Flyshark → Tools menu to load and run the script.
+The `-- TNS|Title|TNE` comment on line 1 sets the name shown in the Tools menu.
 
-See [docs/software/lua-api.md](../docs/software/lua-api.md) for the full Lua API reference.
+## EdgeTX API Compatibility
+
+The Flyshark Lua VM implements a subset of the EdgeTX/OpenTX API.
+Available: `lcd.*`, `getValue()`, `getFieldInfo()`, `model.*`, `getDateTime()`.
+Missing or partial: `sportTelemetryPush/Pop`, `crossfireTelemetryPush`,
+`setTelemetryValue`, `widget` lifecycle. Test on-device — some functions
+exist but return nil. See [docs/software/lua-api.md](../docs/software/lua-api.md) for details.
