@@ -62,10 +62,41 @@ su 0 setprop debug.sf.hw 0
 su 0 setprop debug.hwui.renderer skiagl
 ```
 
-**Expected savings: ~15-20ms** (1 frame time from phase offsets + processing overhead)
+**Expected savings: ~10-15ms** (CZ/DRE disable + VSync phase zeroing; GPU composition and debugfs writes ineffective — see Phase 1 Results)
 
 **Revert:** Reboot (all `debug.*` props reset). The `persist.*` props survive reboot
 but are harmless — set them back to 0 if needed.
+
+## Phase 1 Results
+
+Testing revealed that most Phase 1 approaches hit kernel-level barriers:
+
+**What doesn't work:**
+
+- **debugfs DISP_OPT writes are read-only** in this kernel build. `mtkfb_dbg_write()` logs the command but does NOT call `disp_helper_set_option()`. The debugfs interface is a diagnostic stub, not a control path.
+- **Direct register writes to PQ pipeline modules** (COLOR0, CCORR0, AAL0, GAMMA0, DITHER0) take effect for a single frame but are overwritten by CMDQ at the next vsync refresh (~17.7ms later). CMDQ reprograms the entire display pipeline every frame from its stored command tables.
+- **SF triple buffering** was already disabled, backpressure already off, `latch_unsignaled` already enabled. No additional gains from these.
+
+**What does work:**
+
+- **COLOR0 is already in relay mode** (EN=0x0) — one PQ stage is already bypassed at stock settings.
+- **MDP CZ/DRE disable** (`persist.sys.disable_cz`, `persist.sys.disable_dre`) — confirmed effective via setprop.
+- **VSync phase offset reduction** (all `debug.sf.*phase_offset*` props to 0) — confirmed effective via setprop.
+
+**Measured Phase 1 savings: ~10-15ms** (CZ/DRE disable + VSync phase zeroing only).
+
+**For deeper display pipeline optimization**, a loadable kernel module is required. The module must call `disp_helper_set_option()` (at kernel address `0xffffff80086c2fc4`) to modify CMDQ command tables for BYPASS_PQ, ANTILATENCY, DIRECT_LINK, and DELAYED_TRIGGER. This requires cross-compiling against the MT8788 kernel source tree.
+
+**PQ pipeline register map** (for kernel module development):
+
+| Module | Base Address |
+|--------|-------------|
+| COLOR0 | 0x1400e000 |
+| CCORR0 | 0x1400f000 |
+| AAL0 | 0x14010000 |
+| GAMMA0 | 0x14011000 |
+| DITHER0 | 0x14012000 |
+| DSI0 | 0x14014000 |
 
 ## Phase 2: Persistent Props
 
@@ -184,8 +215,8 @@ HDMI bridge output directly to the frame buffer, bypassing the full ISP pipeline
 | Herelink v2 | 110ms | 250-280ms | 5.5" 1080p | ~$500 |
 | SIYI MK32 | 110ms | ~180ms | 7" 1080p | ~$700 |
 | AX12 (stock) | N/A | ~140ms | 5.5" 720p | ~$250 |
-| **AX12 (Phase 1+2)** | — | **~90-110ms** | 5.5" 720p | $250 |
-| **AX12 (Phase 1-3)** | — | **~75-95ms** | 5.5" 720p | $250 |
+| **AX12 (Phase 1+2)** | — | **~95-115ms** | 5.5" 720p | $250 |
+| **AX12 (Phase 1-3)** | — | **~80-100ms** | 5.5" 720p | $250 |
 | **AX12 (Phase 1-4)** | — | **~40-55ms** | 5.5" 720p | $250 |
 
 The AX12 is already competitive at stock settings. With optimization, it could beat dedicated FPV ground stations.
@@ -194,7 +225,10 @@ The AX12 is already competitive at stock settings. With optimization, it could b
 
 | Phase | Risk | Reversible | Expected Savings | Cumulative |
 |-------|------|------------|-----------------|------------|
-| 1. Runtime tweaks | None | Reboot | 15-20ms | ~120ms |
-| 2. Persistent props | Low | Restore backup | 15-30ms | ~90-105ms |
-| 3. Direct Link mode | Moderate | Reboot | ~17ms | ~75-90ms |
+| 1. Runtime tweaks | None | Reboot | 10-15ms | ~125-130ms |
+| 1 Results | — | — | Confirmed 10-15ms | See above |
+| 2. Persistent props | Low | Restore backup | 15-30ms | ~95-115ms |
+| 3. Direct Link mode¹ | Moderate | Reboot | ~17ms | ~80-100ms |
 | 4. Kernel patches | High | Reflash stock | 30-50ms | ~40-55ms |
+
+¹ Phase 3 (Direct Link) and deeper Phase 1 optimizations (BYPASS_PQ, ANTILATENCY, DELAYED_TRIGGER) require a kernel module — debugfs writes are non-functional in this build.
