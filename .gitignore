@@ -1,7 +1,32 @@
+# Binary artifacts
 *.apk
 *.so
 *.bin
-node_modules/
+
+# Python
 *.pyc
 __pycache__/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Native libraries (extracted, not redistributable)
 native-lib/
+
+# Node
+node_modules/
+
+# Editor / IDE
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/

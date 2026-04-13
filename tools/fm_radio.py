@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3
+#!/usr/bin/env python3
 """
 FM Radio controller for MT6631 on AX12 (MT8788).
 Uses /dev/fm with the MTK WCN ioctl interface (magic 0xf5).
