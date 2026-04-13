@@ -371,3 +371,13 @@ Target changes for latency reduction:
 5. ROUND_CORNER: 1 -> 0 (minor, <1ms)
 
 Combined estimated reduction: 20-30ms from display pipeline alone.
+
+
+### Kernel Symbol Addresses (for module development)
+
+From /proc/kallsyms:
+- disp_helper_set_option: 0xffffff80086c2fc4
+- disp_helper_set_option_by_name: 0xffffff80086c3314
+
+These addresses are needed for the latency optimization kernel module
+to call the display helper functions directly.
