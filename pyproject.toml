@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "radiomaster-umbus"
+version = "0.1.0"
+description = "UMBUS protocol library for RadioMaster AX12 — decode, encode, and validate frames"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Kyle Adomavicius" },
+]
+keywords = [
+    "umbus",
+    "radiomaster",
+    "ax12",
+    "rc",
+    "protocol",
+    "serial",
+    "elrs",
+    "crsf",
+    "drone",
+    "radio-control",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Hardware",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/rmeadomavic/ax12-research"
+Documentation = "https://github.com/rmeadomavic/ax12-research/tree/main/docs/protocol"
+Repository = "https://github.com/rmeadomavic/ax12-research"
+Issues = "https://github.com/rmeadomavic/ax12-research/issues"
+
+[project.scripts]
+umbus-decode = "umbus.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["umbus*"]
+
+[tool.setuptools.package-data]
+umbus = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
