@@ -76,14 +76,16 @@ Combined with the AX12 ($120), this enables a complete RC + digital FPV system f
 
 ## Open Questions
 
-- Does PixelPilot's userspace RTL8812AU driver work on Android 9 / kernel 4.4?
+- ~~Does PixelPilot work on Android 9 / MT8788?~~ **Yes, minSdk=26 (Android 8.0). Known MediaTek libusb bug (issue #6) fixed in PR #97 (merged 2026-03-26). Use floppyhammer fix APK or build from main — release v0.23.1 does NOT include the fix.**
 - Does the MT8788 USB OTG provide enough power for RTL8812AU (some need 500mA+)?
 - Can PixelPilot and Flyshark run simultaneously without conflicts?
 - Is there enough USB bandwidth for both RTL8812AU and potential GPS/ethernet dongles via hub?
 
 ## References
 
-- PixelPilot: github.com/OpenIPC/PixelPilot (125+ stars)
+- PixelPilot: github.com/OpenIPC/PixelPilot (125+ stars, minSdk 26)
+- PixelPilot MT fix APK: github.com/floppyhammer/PixelPilot/releases (fix-no-video branch)
+- FPVue: github.com/gehee/FPVue_android (106 stars, original fork)
 - OpenIPC firmware: github.com/OpenIPC (127 repos)
 - WFB-ng: github.com/svpcom/wifibroadcast
 - fpv4win: github.com/OpenIPC/fpv4win
