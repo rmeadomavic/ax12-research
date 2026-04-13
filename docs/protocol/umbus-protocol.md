@@ -79,6 +79,9 @@ Offset  Size  Type     Description
 86      1     u8       Checksum (CRC-8/MAXIM, init=0x00)
 ```
 
+
+**Bytes 14-17** (newly analyzed): Two u16le values. In idle state, consistently show 65036 (SWITCH_HIGH) and 500. These appear to be two additional channel outputs that precede the main 33-channel block — likely a pot/slider and a switch state not included in the primary channel map. Values differ from the main channel block (bytes 18+), suggesting these encode separate physical inputs.
+
 **Gimbal values** (bytes 6-13): Signed 16-bit little-endian. Range approximately -500 to +500 at center rest, full range TBD. Four axes correspond to two physical sticks (2 axes each). Axis-to-stick mapping requires physical testing.
 
 **Channel values** (bytes 18+): Unsigned 16-bit little-endian.
