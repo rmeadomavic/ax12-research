@@ -351,20 +351,123 @@ Model configs are stored as flat binary structs in the Flyshark app's private di
 **Location:** `/data/data/com.Flyshark.RadioMasterAX/files/`  
 **Format:** Fixed-size binary structs (NOT SQLite or other database)
 
-### .rcm Files (~1877 bytes each)
+### .rcm Files (1813–1877 bytes, variable)
+
+File size varies by model type due to variable-length endpoint section.
+Sizes observed: DeltaWing=1813, Helicopter=1853, FPVDrone/FixedWing=1877.
+
+**C++ backing types** (from `libRadioMasterAX_arm64-v8a.so`):
+`QML_Pack_RcModelCfgData`, `QML_Pack_RcCurveCfgData`, `QML_Pack_RcChOutCfg`,
+`QML_Pack_RcMixCfgData`, `QML_Pack_RcChCfgDr`, `QML_Pack_RcSrcCfg`
+
+#### Header (0x000–0x1FF)
 
 | Offset | Size | Type | Description |
 |--------|------|------|-------------|
-| 0 | 4 | u32le | Magic: `0x12345678` |
-| 4 | 200 | char[] | Model name (null-padded) |
-| 204 | 256 | char[] | Icon path (null-padded) |
-| 460 | 4 | u32le | Timestamp (Unix epoch) |
-| 464 | 2 | u16le | Version |
-| 466 | 2 | u16le | Flags |
-| 468 | 32 | u8[32] | Trim values (center = 0x7F) |
-| 500 | 32 | u8[32] | Rate values (100% = 0x64) |
-| 532+ | var | — | Mixer configuration |
-| tail | 14×N | — | Channel endpoint records (14 bytes each) |
+| 0x000 | 4 | u32le | Magic: `0x12345678` |
+| 0x004 | 4 | u32le | Creation timestamp (Unix epoch). Equals the filename for user models |
+| 0x008 | 200 | char[200] | Model name (null-terminated, null-padded) |
+| 0x0D0 | 252 | char[252] | Icon path (null-terminated, Qt `qrc:/` path) |
+| 0x1CC | 4 | u32le | Last-modified timestamp (Unix epoch). 0 for templates |
+| 0x1D0 | 48 | — | Reserved (all zeros) |
+
+#### Config Section (0x200–0x261)
+
+| Offset | Size | Type | Description |
+|--------|------|------|-------------|
+| 0x200 | 4 | u32le | Config version: always `0x000002EC` (748) |
+| 0x204 | 1 | u8 | Model type magic: always `0xA3` (163) |
+| 0x205 | 1 | u8 | Model type: 0=FixedWing, 1=DeltaWing, 2=Helicopter, 3=FPVDrone |
+| 0x206 | 2 | — | Padding (zeros) |
+| 0x208 | 24 | u8[24] | Model-specific params (Helicopter: swash config; zeros for others) |
+| 0x220 | 13 | — | Reserved (zeros) |
+| 0x22D | 16 | u8[16] | Unknown: `0xAA`×16 for DeltaWing/Helicopter, zeros otherwise |
+| 0x23D | 1 | u8 | Trims flag: always `0x01` |
+| 0x23E | 36 | u8[36] | Trim values per channel (center = `0x7F`/127) |
+
+#### Rate/Expo Curves (0x262–0x4C5, `QML_Pack_RcCurveCfgData`)
+
+612 bytes, structured as 34-byte records (max 18 channels), zero-padded.
+Only populated in FPVDrone and Helicopter templates; user models typically zeros.
+
+Each 34-byte record has two sub-arrays:
+
+| Sub | Offset | Size | Description |
+|-----|--------|------|-------------|
+| A | +0 | 18 | Rate curve: `[type u8] [num_points u8] [points i8[16]]` |
+| B | +18 | 16 | Expo curve: `[points i8[16]]` (same point count as rate) |
+
+Curve point values are signed: `0x9C`=−100, `0x00`=0, `0x64`=+100.
+Type `0x04` = D/R curve (standard). Type `0x02` = throttle/collective (helicopter).
+
+**Example** — FPVDrone CH0 (Aileron), 5-point:
+- Rate: `04 05 9C CE 00 32 64` → type=4, 5pts: [−100, −50, 0, +50, +100] (linear)
+- Expo: `9C F6 1E 46 64` → 5pts: [−100, −10, +30, +70, +100] (exponential)
+
+#### Rates & Runtime Data (0x4C6–0x5FF)
+
+| Offset | Size | Type | Description |
+|--------|------|------|-------------|
+| 0x4C6 | 36 | u8[36] | Rate values per channel (default = `0x64`/100%) |
+| 0x4EA | 1 | u8 | Unused (always 0) |
+| 0x4EB | 1 | u8 | Unknown flag: `0x24` for FPVDrone/DeltaWing/Helicopter, else 0 |
+| 0x4EC | 276 | — | **Uninitialized memory** — leaked runtime pointers/heap, not meaningful |
+
+> **Bug:** The app serializes raw struct memory at 0x4EC–0x5FF without zeroing it,
+> leaking ARM64 heap addresses. These differ between saves and carry no config data.
+
+#### Endpoint Section (0x600–EOF, variable length)
+
+| Offset | Size | Type | Description |
+|--------|------|------|-------------|
+| 0x600 | 4 | u32le | Endpoint data byte count (from 0x608 to EOF) |
+| 0x604 | 4 | u32le | Duplicate of above |
+| 0x608 | var | — | Endpoint records (see sub-format below) |
+
+Observed sizes: DeltaWing=269, Helicopter=309, FPVDrone/FixedWing/users=333.
+
+**Endpoint record layout:**
+
+```
+[Header]     = 0xA4 marker (1B) + endpoint_def (14B) = 15 bytes
+[Channel]×N  = channel_id (1B) + mixer_entry (8B)×M + endpoint_def (14B)
+[Default]×T  = endpoint_def (14B) — unconfigured channel defaults
+[Padding]    = 4 bytes of zeros
+```
+
+**Mixer entry** (8 bytes, `QML_Pack_RcMixCfgData`):
+
+| Offset | Size | Type | Description |
+|--------|------|------|-------------|
+| +0 | 1 | u8 | Source channel number |
+| +1 | 1 | i8 | Weight: +100=normal, −100=reversed (`0x9C`) |
+| +2 | 1 | i8 | Offset (0 = none) |
+| +3 | 2 | u16le | Limit/curve value (`0xFFC0` for simple mix, position for curves) |
+| +5 | 1 | u8 | Enabled flag (1=yes, 0=no) |
+| +6 | 2 | — | Reserved (zeros) |
+
+**Endpoint definition** (14 bytes, `QML_Pack_RcChOutCfg`):
+
+| Offset | Size | Type | Description |
+|--------|------|------|-------------|
+| +0 | 1 | u8 | Travel positive (default 100 = `0x64`) |
+| +1 | 1 | u8 | Subtrim (default 0) |
+| +2 | 1 | i8 | Travel negative (default −100 = `0x9C`) |
+| +3 | 1 | u8 | Rate (default 100 = `0x64`) |
+| +4 | 1 | u8 | Curve type (`0xFF`=linear, `0x05`=helicopter special) |
+| +5 | 1 | u8 | Flags (context-dependent) |
+| +6 | 8 | u16le[4] | Limit values (default `0x00C0`=192 each) |
+
+**Model-specific mixer examples:**
+
+- **FPVDrone**: 13 channels, 1 mixer input each (direct stick→channel mapping)
+- **DeltaWing**: Elevon records have 2 mixer inputs (aileron+elevator mixed).
+  Second elevon uses `weight=−100` for reversed elevator.
+- **Helicopter**: Pitch/throttle records have 3 mixer inputs (curve breakpoints).
+  Values in the limit field encode curve positions instead of travel limits.
+
+Channel order in endpoint records follows output assignment, not numerical order.
+FPVDrone order: CH3(ail), CH1(ele), CH2(thr), CH0(rud), CH20–25(aux), CH4, CH13, CH35.
 
 ### Active Model Pointer
 

@@ -66,18 +66,29 @@ Embedded **Lua 5.3.6** with NodeMCU-lineage ROM table support and EdgeTX-compati
 ## Model Storage
 
 **Format:** Flat binary `.rcm` files at `/data/data/com.Flyshark.RadioMasterAX/files/rcModel/`
+**Size:** 1813–1877 bytes (variable, depends on endpoint section)
 
 | Offset | Size | Field |
 |--------|------|-------|
-| 0 | 4B | Magic: `0x12345678` |
-| 4 | 200B | Model name (null-padded) |
-| 204 | 256B | Icon path |
-| 460 | 4B | Unix timestamp |
-| 464 | 2B | Version |
-| 466 | 2B | Flags |
-| 468 | 32B | Trim values (center = 0x7F) |
-| 500 | 32B | Rate values (100% = 0x64) |
-| 532+ | var | Mixer config + channel endpoints |
+| 0x000 | 4B | Magic: `0x12345678` |
+| 0x004 | 4B | Creation timestamp (equals filename for user models) |
+| 0x008 | 200B | Model name (null-padded) |
+| 0x0D0 | 252B | Icon path (`qrc:/image/...`) |
+| 0x1CC | 4B | Last-modified timestamp (0 for templates) |
+| 0x200 | 4B | Config version (`0x02EC`) |
+| 0x204 | 1B | Model type magic (`0xA3`) |
+| 0x205 | 1B | Model type: 0=FixedWing, 1=DeltaWing, 2=Heli, 3=Drone |
+| 0x208 | 24B | Model-specific params (heli swash config, else zeros) |
+| 0x23D | 1B | Trims flag (always 1) |
+| 0x23E | 36B | Trim values (center = `0x7F`) |
+| 0x262 | 612B | Rate/expo curves (34B records: type, points, expo) |
+| 0x4C6 | 36B | Rate values (default `0x64` = 100%) |
+| 0x4EC | 276B | Uninitialized memory (leaked heap, not config data) |
+| 0x600 | 8B | Endpoint section header (data size × 2, u32le) |
+| 0x608 | var | Endpoint records: header + channel mixer/endpoint defs + defaults |
+
+C++ types: `QML_Pack_RcModelCfgData`, `QML_Pack_RcCurveCfgData`, `QML_Pack_RcChOutCfg`,
+`QML_Pack_RcMixCfgData`, `QML_Pack_RcChCfgDr`. Full spec in [hardware-map.md](../hardware/hardware-map.md).
 
 Active model tracked in `RcCfgFile.rcCfg` (magic `0x4F61BC00`). Built-in templates: FPVDrone, FixedWing, Helicopter, DeltaWing.
 
