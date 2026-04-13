@@ -311,3 +311,63 @@ No V4L2 framework is loaded (no /dev/video* or /dev/media* nodes). Using CAMSV r
 2. Direct register programming via /dev/mem (risky but possible)
 
 This is the single highest-leverage optimization for HDMI input latency.
+
+
+### Complete Display Options Register Map (56 options)
+
+All DISP_OPT values from debugfs (current state with Flyshark running):
+
+#### Latency-Critical Options
+| # | Option | Current | Optimal | Impact |
+|---|--------|---------|---------|--------|
+| 22 | BYPASS_PQ | 0 (off) | 1 | Skip COLOR/CCORR/AAL/GAMMA/DITHER pipeline |
+| 53 | ANTILATENCY | 0 (off) | 1 | Enable anti-latency display mode |
+| 41 | DELAYED_TRIGGER | 1 (on) | 0 | Disable batched frame trigger |
+| 12 | IDLEMGR_SWTCH_DECOUPLE | 1 (on) | 0 | Prevent idle DECOUPLE switch |
+| 52 | ROUND_CORNER | 1 (on) | 0 | Skip round corner processing |
+
+#### Display Mode Options
+| # | Option | Value | Notes |
+|---|--------|-------|-------|
+| 0 | USE_CMDQ | 1 | Command Queue engine active |
+| 1 | USE_M4U | 1 | Memory Management Unit for display |
+| 10 | SODI_SUPPORT | 1 | Screen On Display Idle |
+| 11 | IDLE_MGR | 1 | Idle manager active |
+| 14 | SHARE_SRAM | 1 | SRAM sharing between display modules |
+| 19 | DECOUPLE_MODE_USE_RGB565 | 0 | 32-bit color in DECOUPLE mode |
+| 25 | PRESENT_FENCE | 1 | Fence-based frame presentation |
+| 27 | SWITCH_DST_MODE | 0 | No destination mode switching |
+| 30 | BYPASS_OVL | 0 | Overlay engine active |
+| 34 | SMART_OVL | 0 | Smart overlay disabled |
+| 38 | HRT | 1 | Hardware Resource Table active |
+| 39 | PARTIAL_UPDATE | 1 | Partial screen update enabled |
+| 44 | OVL_EXT_LAYER | 1 | Extended overlay layers |
+| 46 | AOD | 1 | Always On Display capable |
+| 48 | RSZ | 0 | No display resize/scaling |
+| 49 | RPO | 1 | Resize Post-OVL |
+| 50 | DUAL_PIPE | 0 | Single display pipe |
+| 51 | SHARE_WDMA0 | 1 | Shared WDMA0 |
+| 54 | DC_BY_HRT | 0 | No forced DECOUPLE by HRT |
+
+#### DSI Configuration
+- Mode: SYNC_PULSE_VDO_MODE (standard video mode)
+- High Speed: enabled
+- Dual DSI: disabled
+- LCM Driver: xm62168_hd720_lcm_drv
+
+#### Latency Optimization Kernel Module Requirements
+
+To achieve minimum display latency, a kernel module must call
+disp_helper_set_option() for each critical option. The function
+address can be found via kallsyms:
+ffffff80086c2fc4 T disp_helper_set_option
+ffffff80086c3314 T disp_helper_set_option_by_name
+
+Target changes for latency reduction:
+1. BYPASS_PQ: 0 -> 1 (estimated -10-15ms)
+2. ANTILATENCY: 0 -> 1 (estimated -5-10ms)
+3. DELAYED_TRIGGER: 1 -> 0 (estimated -5ms)
+4. IDLEMGR_SWTCH_DECOUPLE: 1 -> 0 (prevents latency spikes)
+5. ROUND_CORNER: 1 -> 0 (minor, <1ms)
+
+Combined estimated reduction: 20-30ms from display pipeline alone.
