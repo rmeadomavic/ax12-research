@@ -107,6 +107,12 @@ Simple status frame. Content is always identical during normal operation.
 **Size:** 7 bytes  
 **Content (fixed):** `a6 08 10 02 04 03 00`
 
+
+**Idle state:** Frame is completely static: a6 08 10 02 04 03 00
+- Byte 4: 0x04 (sub-header)
+- Byte 5: 0x03 (MCU state — possibly 3=idle/ready)
+- Byte 6: 0x00 (CRC)
+
 #### 0x15 — ELRS/RF Telemetry (5 Hz)
 
 ELRS link statistics from the RF module, relayed through the MCU.
@@ -175,6 +181,14 @@ T+0.500s: [0x08] + [0x0c] + [0x0e]
 T+1.000s: [0x07] + [0x0e]
 T+1.500s: [0x08] + [0x0c] + [0x0e]
 ```
+
+
+**Idle state analysis (3 CRC-validated frames):**
+
+- Byte 4: 0x06 (sub-type)
+- Byte 5: sequence counter (increments 0, 1, 2, ...)
+- Byte 8: 0x20 (32) constant in idle — possibly temperature or status
+- Bytes 6-7, 9-16: all zeros in idle — telemetry fields only populated when active
 
 #### 0x0E — Polling/Status Request (2 Hz)
 
