@@ -290,3 +290,24 @@ Available target FPS ranges for the RN6752M video input:
 The display runs at 56.39Hz but camera input is capped at 30fps, meaning every other display refresh shows the same frame. This contributes approximately 16-33ms of latency depending on frame timing.
 
 Increasing camera fps above 30 would require a RN6752M driver modification or a different video decoder.
+
+
+### CAMSV Hardware Available (confirmed 2026-04-13)
+
+Five CAMSV (Camera Sensor Video) DMA engines are present on the AX12:
+
+| Device | Address | Purpose |
+|--------|---------|---------|
+| camsv1 | 0x1a050000 | Raw DMA engine 1 |
+| camsv2 | 0x1a051000 | Raw DMA engine 2 |
+| camsv3 | 0x1a052000 | Raw DMA engine 3 |
+| camsv5 | 0x1a054000 | Raw DMA engine 5 |
+| camsv6 | 0x1a055000 | Raw DMA engine 6 |
+
+CAMSV taps the MIPI CSI-2 receiver output BEFORE the ISP pipeline. A kernel module could route the RN6752M video input directly to CAMSV, bypassing the ISP entirely and eliminating the estimated 30-50ms of ISP processing latency.
+
+No V4L2 framework is loaded (no /dev/video* or /dev/media* nodes). Using CAMSV requires either:
+1. A custom kernel module that configures CAMSV DMA and exposes frames via V4L2 or direct buffer mapping
+2. Direct register programming via /dev/mem (risky but possible)
+
+This is the single highest-leverage optimization for HDMI input latency.
