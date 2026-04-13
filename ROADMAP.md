@@ -26,7 +26,7 @@ Partially understood or less critical research areas.
 Edge cases and deeper analysis that would complete the picture.
 
 - **Header byte encoding** — Bytes 2-3 encode source/destination routing, but the encoding scheme (bitmask? lookup table?) is not fully understood.
-- **Heartbeat checksum anomaly** — App-originated 0x08 frames use a non-standard checksum. May be a different CRC init value or a different algorithm entirely.
+- ~~**Heartbeat checksum anomaly**~~ — **RESOLVED.** All app->MCU frames (0x08, 0x0E, 0x0C, 0x07) use standard CRC-8/MAXIM init=0x00. Verified from strace capture of steady-state serial I/O.
 - **PWM output mapping** — How do the 33 logical channels map to physical PWM outputs on the MCU? External module bay pin assignments are unknown.
 - **Native library decompilation** — The 25MB .so has 13,000+ dynamic symbols. Current analysis uses strings/readelf only. Targeted Ghidra decompilation of UMBUS engine functions would accelerate protocol understanding.
 
@@ -35,6 +35,13 @@ Edge cases and deeper analysis that would complete the picture.
 Active work with partial results.
 
 - **USB OTG host mode** — Sysfs toggle found: `device_host_gpio_attr` is world-writable, MUSB cmode and dual-role port mode are switchable from userspace. No custom kernel needed. **Needs physical testing** with a USB-C OTG adapter and connected device to confirm full enumeration, VBUS sourcing, and data transfer. See [hardware-map.md USB OTG section](docs/hardware/hardware-map.md#usb-otg-host-mode).
+
+## Recently Resolved
+
+- **MCU standalone operation** — Confirmed the AT32 MCU broadcasts all 4 frame types (0x57 channel, 0x08 heartbeat, 0x15 ELRS, 0x10 extended) at full documented rates even when the Flyshark app is NOT running. The MCU operates completely autonomously.
+- **App->MCU frame CRCs** — All use CRC-8/MAXIM init=0x00. No heartbeat anomaly exists. Frame batching confirmed: 0x08+0x0C+0x0E written as single 34-byte burst, 0x07+0x0E as 21-byte burst.
+- **App->MCU idle payloads decoded** — 0x0E: 02064B01000000, 0x0C: 028101080000, 0x08: 050180, 0x07: FF01. All static during idle state.
+- **I2C device map complete** — 28 devices across 7 buses. IT66121 HDMI transmitter identified at bus 1 addr 0x4C.
 
 ## Future
 
