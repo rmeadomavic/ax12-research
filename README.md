@@ -127,6 +127,17 @@ All Python tools are Python 3.13, stdlib only — no external dependencies.
 
 **Factory Root.** The AX12 ships with a SUID root binary at `/system/xbin/su` — no exploit required. The build is `userdebug` with `test-keys` and SELinux in permissive mode. Setup: [Root Guide](docs/guides/root-guide.md).
 
+
+**HDMI Latency Root Cause.** The RN6752M video decoder is registered as a camera sensor (imgsensor) in MediaTek's HAL, routing all HDMI input through the full ISP pipeline — 22+ tuning libraries for HDR, noise reduction, 3A, and face detection. Camera FPS is capped at 30fps on a 56.4Hz display. The display dynamically switches between DIRECT_LINK (low latency) and DECOUPLE (high latency, triple-buffered) modes based on layer count. Five CAMSV DMA engines (0x1a050000-0x1a055000) are available for ISP bypass via kernel module. Details: [Latency Optimization](docs/guides/latency-optimization.md).
+
+**MCU Operates Autonomously.** The AT32 MCU broadcasts all four frame types (channel data, heartbeat, ELRS telemetry, extended telemetry) at their documented rates even when the Flyshark app is not running. The MCU does not require an app handshake to start operating.
+
+**Complete I2C Device Map.** 28 devices across 7 I2C buses fully enumerated: IT66121 HDMI 1.4 transmitter (output), RT5509 Class-D speaker amp, RT9465 charger, MT6370 sub-PMIC with USB-C TCPC, ICM-42607 IMU, and 14 phantom entries from the MT8788 reference design. Details: [Hardware Map](docs/hardware/hardware-map.md).
+
+**Cellular Modem Present.** The MT8788 baseband processor runs MOLY firmware (MOLY.LR12A.R2.MP.V109.4) and is configured for LTE. 21 cellular network interfaces exist but are inactive — no SIM slot or antenna is populated on the AX12 PCB.
+
+**OpenIPC FPV Compatibility.** The PixelPilot Android app (minSdk 26) can turn the AX12 into an OpenIPC FPV ground station via USB OTG + RTL8812AU WiFi dongle (~0). A known MediaTek libusb bug (issue #6) has a fix merged in PR #97. Details: [OpenIPC FPV](docs/hardware/openipc-fpv.md).
+
 ## Device Specifications
 
 | Component | Detail |
