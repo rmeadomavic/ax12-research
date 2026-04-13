@@ -33,22 +33,33 @@ This project documents the UMBUS protocol, maps the hardware, analyzes the nativ
 - **[UMBUS Protocol Specification](docs/protocol/umbus-protocol.md)** — Complete frame format, timing, field maps for all 8 frame types
 - **[Checksum Investigation](docs/protocol/checksum-investigation.md)** — CRC-8/MAXIM algorithm with per-type init values
 - **[ELRS Telemetry Analysis](docs/protocol/elrs-telemetry-analysis.md)** — RF link quality frames embedded in UMBUS
+- **[CRSF Protocol Reference](docs/protocol/crsf-reference.md)** — Crossfire/ELRS serial protocol quick reference
 
 ### Hardware
 
 - **[Hardware Map](docs/hardware/hardware-map.md)** — Architecture, physical controls, sensors, peripherals, channel mapping
 - **[Device Tree Analysis](docs/hardware/device-tree.md)** — SoC peripherals: UARTs, SPI, I2C, GPIO, sensors
 - **[System Audit](docs/hardware/system-audit.md)** — Partitions, kernel modules, device nodes, sysfs
+- **[AT32F435 MCU](docs/hardware/at32-mcu.md)** — RC microcontroller: role, specs, firmware, SWD debug access
+- **[ELRS Backpack](docs/hardware/elrs-backpack.md)** — ESP backpack chip: WiFi MAVLink, VTX sync, OTA, switch expansion
+- **[MT8788 Platform Research](docs/hardware/mt8788-research.md)** — SoC findings: kernel, drivers, optimization targets
 
 ### Software
 
 - **[Native Library Analysis](docs/software/native-lib-analysis.md)** — 25MB .so reverse engineering: 250+ classes, UMBUS engine, CRSF engine
 - **[Lua API Reference](docs/software/lua-api.md)** — Embedded Lua 5.3 VM with LVGL bindings and EdgeTX-compatible API
+- **[Flyshark App Analysis](docs/software/flyshark-app.md)** — Qt6/QML app architecture, serial port usage, model storage format
 
 ### Guides
 
+- **[Getting Started](docs/guides/getting-started.md)** — Setup guide for AX12 protocol exploration and tool usage
 - **[Root & Setup Guide](docs/guides/root-guide.md)** — Install Termux, Tailscale, Claude Code, get root access
 - **[Capture Session Guide](docs/guides/capture-session-guide.md)** — Record structured strace sessions for protocol analysis
+- **[MAVLink Telemetry Setup](docs/guides/mavlink-setup.md)** — End-to-end ELRS MAVLink on AX12 with QGC or ATAK
+- **[HDMI Latency Optimization](docs/guides/latency-optimization.md)** — Reducing glass-to-glass latency on HDMI input
+- **[USB OTG Testing](docs/guides/usb-otg-testing.md)** — Enable USB host mode for peripherals via sysfs
+- **[Tool Usage Guide](docs/guides/tool-usage.md)** — Comprehensive reference for every tool in `tools/`
+- **[Security Hardening](docs/guides/security-hardening.md)** — Mitigating factory root, open ADB, and known CVEs
 
 ## Quick Start
 
@@ -69,7 +80,7 @@ Follow the [Capture Session Guide](docs/guides/capture-session-guide.md) to reco
 
 ## Tools
 
-All tools are Python 3.13, stdlib only — no external dependencies.
+All Python tools are Python 3.13, stdlib only — no external dependencies.
 
 | Tool | Description |
 |------|-------------|
@@ -78,10 +89,19 @@ All tools are Python 3.13, stdlib only — no external dependencies.
 | [`strace-parser.py`](tools/strace-parser.py) | Extract and decode UMBUS frames from strace output |
 | [`calibrator.py`](tools/calibrator.py) | 3-phase control surface calibration and axis mapping |
 | [`capture-session.py`](tools/capture-session.py) | Structured control input recording with operator guidance |
+| [`batch-capture.py`](tools/batch-capture.py) | Non-interactive batch capture — timed prompts, no keyboard input |
 | [`live-mapper.py`](tools/live-mapper.py) | Interactive real-time control-to-channel mapping |
-| [`fm_radio.py`](tools/fm_radio.py) | FM radio controller via MT6631 ioctl interface |
+| [`live_dashboard.py`](tools/live_dashboard.py) | Web-based real-time UMBUS dashboard via SSE |
+| [`simulator.py`](tools/simulator.py) | Synthetic UMBUS traffic generator for offline testing |
 | [`umbus_server.py`](tools/umbus_server.py) | SSE broadcast server for UMBUS frames |
 | [`build-dashboard.py`](tools/build-dashboard.py) | Generate self-contained HTML protocol dashboard |
+| [`cot_bridge.py`](tools/cot_bridge.py) | MAVLink-to-CoT bridge for ATAK integration |
+| [`test_cot.py`](tools/test_cot.py) | CoT test sender — verify ATAK connectivity |
+| [`fm_radio.py`](tools/fm_radio.py) | FM radio controller via MT6631 ioctl interface |
+| [`usb_otg.py`](tools/usb_otg.py) | USB OTG host/device mode switcher via sysfs |
+| [`optimize.py`](tools/optimize.py) | Safe performance optimizer — bloatware, governor, camera tuning |
+| [`latency-test.py`](tools/latency-test.py) | HDMI pipeline latency measurement via frame timestamp comparison |
+| [`firewall.sh`](tools/firewall.sh) | iptables firewall rules — block telemetry, restrict inbound |
 
 ## Key Findings
 
@@ -97,6 +117,14 @@ All tools are Python 3.13, stdlib only — no external dependencies.
 
 **FM Radio.** The MT6631 combo chip includes a fully functional FM radio tuner (87.5-108 MHz) accessible via `/dev/fm` ioctls. Uses the headphone cable as antenna. Tool: [`fm_radio.py`](tools/fm_radio.py).
 
+**AT32F435 MCU Identified.** The RC microcontroller is an Artery AT32F435 (Cortex-M4F, 288 MHz) — pin-compatible with the STM32F405 but different silicon. It owns all physical inputs, ADC sampling, GPIO debounce, and SPI/UART to the ELRS LR1121 RF module. The Android SoC never touches hardware directly; everything is mediated through UMBUS. Details: [AT32F435 MCU](docs/hardware/at32-mcu.md).
+
+**USB OTG Host Mode via Sysfs.** The top USB-C port supports OTG host mode, toggled by writing to three MT8788 sysfs controls: host GPIO (VBUS power), MUSB cmode, and dual_role mode. This enables keyboards, GPS receivers, and flash drives without hardware modification. Tool: [`usb_otg.py`](tools/usb_otg.py), guide: [USB OTG Testing](docs/guides/usb-otg-testing.md).
+
+**ELRS Backpack WiFi MAVLink.** The AX12 includes a dedicated ELRS backpack chip (ESP8285/ESP32-C3) that can create a WiFi AP and forward MAVLink telemetry via UDP on port 14550 (v1.5.0+). Any WiFi client — QGroundControl, ATAK, Mission Planner — can receive live vehicle telemetry without serial port access or root. This is the cleanest path to AX12-as-GCS. Details: [ELRS Backpack](docs/hardware/elrs-backpack.md).
+
+**Flyshark Three-Transport Architecture.** The native library supports three communication transports — UART (primary, to MCU), TCP (network, for simulators), and USB-HID (direct PC connection) — all using UMBUS protocol. AUX and AUX2 serial modes are configurable, and the app includes a full ground control station with offline maps, terrain data, mission planning, RTSP video, and gimbal control. Analysis: [Flyshark App](docs/software/flyshark-app.md).
+
 **Factory Root.** The AX12 ships with a SUID root binary at `/system/xbin/su` — no exploit required. The build is `userdebug` with `test-keys` and SELinux in permissive mode. Setup: [Root Guide](docs/guides/root-guide.md).
 
 ## Device Specifications
@@ -104,7 +132,7 @@ All tools are Python 3.13, stdlib only — no external dependencies.
 | Component | Detail |
 |-----------|--------|
 | SoC | MediaTek MT8788 (4x Cortex-A53 + 4x Cortex-A73) |
-| MCU | AT32 (Artery Tek) — handles gimbals, switches, RF module |
+| MCU | AT32F435 (Artery Tek) — Cortex-M4F @ 288 MHz, handles gimbals, switches, RF module |
 | Kernel | Linux 4.4.146, Android 9 (Pie), userdebug build |
 | RAM | 4 GB (1 GB ZRAM swap) |
 | Storage | 64 GB eMMC, 38 partitions |
