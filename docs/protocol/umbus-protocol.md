@@ -196,6 +196,23 @@ Always bundled with the heartbeat response.
 **Size:** 12 bytes  
 **Content (fixed during idle):** `a6 0c 10 04 02 81 01 01 00 00 00 7f`
 
+
+**Verified idle payloads** (from strace capture, all CRC-8/MAXIM init=0x00):
+
+| Type | Size | Payload (hex) | CRC |
+|------|------|---------------|-----|
+| 0x0E | 14B | a6 0e 10 04 02 02 06 4b 01 00 00 00 14 | 11 |
+| 0x08 | 8B | a6 08 35 04 05 01 80 | 84 |
+| 0x0C | 12B | a6 0c 10 04 02 81 01 08 00 00 00 | ec |
+| 0x07 | 7B | a6 07 2b 04 ff 01 | f4 |
+
+**Write batching:** The app concatenates multiple frames per write() call for efficiency:
+- 0x08 + 0x0C + 0x0E = 34-byte burst (heartbeat cycle)
+- 0x07 + 0x0E = 21-byte burst (keep-alive cycle)
+- 0x0E alone = 14-byte write (poll-only cycle)
+
+**MCU standalone behavior:** The MCU broadcasts all 4 MCU->App frame types at their documented rates even when the Flyshark app is not running. The AT32 operates completely autonomously.
+
 #### 0x07 — Keep-alive Ping (0.5 Hz)
 
 Lowest-frequency App→MCU message. Sent every 2 seconds.
