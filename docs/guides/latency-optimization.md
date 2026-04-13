@@ -265,3 +265,28 @@ The RN6752M is registered as a camera sensor (imgsensor) in MediaTek's HAL. This
 3. **DIRECT_LINK display mode** - Skip DECOUPLE buffering (kernel module needed)
 4. **Disable PQ pipeline** - BYPASS_PQ display option (kernel module needed)
 5. **Reduce camera tuning** - Strip unnecessary .so libraries to prevent ISP stages from loading
+
+
+### Display Mode is Dynamic (confirmed 2026-04-13)
+
+The display mode (DECOUPLE vs DIRECT_LINK) is NOT static. It switches dynamically based on the Hardware Resource Table (HRT) and current layer count:
+
+- **DIRECT_LINK mode** (lower latency): Used when layer count and bandwidth are within limits. OVL -> DSI path with minimal buffering.
+- **DECOUPLE mode** (higher latency): Triggered when the compositor needs more layers than OVL can handle directly. Adds WDMA -> RDMA triple buffering path (+35-53ms at 56.4Hz).
+
+When Flyshark is running but not displaying HDMI video overlay, the system may stay in DIRECT_LINK. When the HDMI video surface is active (more layers), HRT may force DECOUPLE.
+
+Key property: DISP_OPT_DC_BY_HRT controls automatic DECOUPLE switching.
+
+### Camera FPS Configuration
+
+Available target FPS ranges for the RN6752M video input:
+- [15, 15] - fixed 15fps
+- [15, 20] - variable 15-20fps
+- [20, 20] - fixed 20fps
+- [5, 30] - variable 5-30fps
+- [30, 30] - fixed 30fps (maximum)
+
+The display runs at 56.39Hz but camera input is capped at 30fps, meaning every other display refresh shows the same frame. This contributes approximately 16-33ms of latency depending on frame timing.
+
+Increasing camera fps above 30 would require a RN6752M driver modification or a different video decoder.
