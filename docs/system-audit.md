@@ -223,8 +223,8 @@ Active device addresses detected on each bus:
 |-----|-----------|---------------|
 | i2c-0 | 0x40 | Cap touch controller |
 | i2c-1 | 0x01, 0x0C, 0x10, 0x11, 0x4C, 0x68, 0x69 | NM demo, msensor, ICM42607 accel, ICM42607 gyro, unknown(0x4C), gsensor, gyro |
-| i2c-2 | 0x0C, 0x10, 0x15, 0x33, 0x36, 0x43, 0x50, 0x54 | Camera AF, sub cam, sub AF, CCU main, main cam, CCU sub, main EEPROM, sub EEPROM |
-| i2c-3 | 0x08, 0x1E | NFC, ALS/proximity |
+| i2c-2 | 0x0C, 0x10, 0x15, 0x33, 0x36, 0x43, 0x50, 0x54 | Camera AF, sub cam, sub AF, CCU main, **0x36=RN6752M video decoder** (sensor ID 0x501, AHD/CVBS→MIPI CSI-2), CCU sub, main EEPROM, sub EEPROM |
+| i2c-3 | 0x08, 0x1E | NFC, ALS/proximity — **both NOT POPULATED** (DT entries from MT8788 reference design, bus scan confirmed no devices respond) |
 | i2c-4 | 0x0E, 0x11, 0x12, 0x38, 0x52 | Main2 AF, CCU main2, CCU main3, main2 cam, main2 EEPROM |
 | i2c-5 | 0x34, 0x4E | MT6370 sub-PMIC, USB Type-C |
 | i2c-6 | 0x34, 0x4B | Speaker amp, RT9465 charger |

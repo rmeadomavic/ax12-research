@@ -60,8 +60,8 @@ The MCU sends 4 frame types at different rates: channel data (25Hz), heartbeat (
 ### Software Stack
 The Flyshark app is a Qt6/QML application with embedded Lua 5.3 scripting (EdgeTX-compatible). It includes a full ground control station with 30+ map providers, terrain elevation, mission planning, AHRS display, and RTSP video streaming. The native library exposes 250+ classes. See [Native Library Analysis](docs/native-lib-analysis.md).
 
-### 32 Channels
-The system supports 32 output channels with per-channel reverse, slow motion, min/max limits, curves, dual rates, and multi-source mixing.
+### 33 Channels
+The system supports 33 output channels (indices 0-32) with per-channel reverse, slow motion, min/max limits, curves, dual rates, and multi-source mixing.
 
 ### Lua Scripting
 Custom Lua scripts can be placed at `/storage/emulated/0/AX12LUA/` for widgets, mixes, and tools. A serial bridge (`luaSetGetSerialByte`) enables custom serial protocols from Lua.
@@ -82,8 +82,8 @@ Custom Lua scripts can be placed at `/storage/emulated/0/AX12LUA/` for widgets, 
 
 ## Work in Progress
 
-- [ ] Gimbal axis-to-stick mapping (needs per-axis physical testing)
-- [ ] Switch and pot data path mapping
+- [x] Gimbal axis-to-stick mapping (see hardware-map.md)
+- [x] Switch and pot channel mapping (see hardware-map.md)
 - [ ] ELRS telemetry field identification (RSSI, LQ, SNR bytes)
 - [ ] Magisk persistent root (dm-verity blocks patched boot images)
 - [ ] DSC port USB loopback trick (gamepad mode for gimbal access)

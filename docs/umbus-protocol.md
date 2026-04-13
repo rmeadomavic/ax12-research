@@ -2,9 +2,11 @@
 
 RadioMaster's proprietary internal bus protocol for communication between the Android SoC (MT8788) and the AT32 MCU over UART.
 
-**Transport:** `/dev/ttyS0` @ 921,600 baud, 8N1  
+**Transport:** `/dev/ttyS0` @ 921,600 baud, 8N1 (verified via `stty -a -F /dev/ttyS0`)  
+**UART:** ST16650V2 at MMIO 0x11002000, clocal, no flow control  
 **Bandwidth:** ~2,414 bytes/sec (~19.3 kbps, ~2% of link capacity)  
-**Direction ratio:** 97.9% MCU→App, 2.1% App→MCU
+**Direction ratio:** 97.9% MCU→App, 2.1% App→MCU  
+**Serial lock:** `LCK..ttyS0` confirms app_process64 PID holds exclusive access
 
 ## Frame Format
 
@@ -72,8 +74,8 @@ Offset  Size  Type     Description
 20-21   2     u16le    Channel 1 output
 ...                    (continues for all channels)
 82-83   2     u16le    Last channel pair
-84      1     u8       Unknown
-85      1     u8       Sequence counter (incrementing)
+84      1     u8       Status/mode (oscillates 144-147 in idle)
+85      1     u8       Constant 0x01 (purpose unknown)
 86      1     u8       Checksum (CRC-8/MAXIM, init=0x00)
 ```
 
@@ -122,13 +124,14 @@ Offset  Size  Type     Description
 13-14   2     u16le    0x4E20 = 20000 (link rate or timer?)
 15-16   2     u8[2]    Link status (00 00 or ff ff)
 17      1     u8       Sequence counter (incrementing)
-18-20   3     u8[3]    CRC/checksum
+18-19   2     u8[2]    Varies; CRC-covered data (purpose unknown)
+20      1     u8       Checksum (CRC-8/MAXIM, init=0x32)
 ```
 
 **Example:**
 ```hex
-a6 15 c3 02 00 ea 0d 3a ea ee 10 00 00 4e 20 00
-00 2a e5 97 8e
+a6 15 c3 02 00 ea 0a 3a ea ee 10 00 00 4e 20 00
+00 1a 27 9f b7
 ```
 
 #### 0x10 — Extended Telemetry (~3 Hz)
@@ -284,7 +287,15 @@ The MCU sends channel data to the app in 0x57 frames. The app processes mixing a
 
 ## Open Questions
 
+### Verified
+
 - [x] Checksum algorithm: CRC-8/MAXIM (poly 0x31/0x8C reflected, init type-dependent)
+- [x] Maximum number of channels in 0x57 frame: 33 (bytes 18-83 = 66 bytes / 2, indices 0-32)
+- [x] Baud rate: 921,600 baud verified via `stty -a -F /dev/ttyS0` (ST16650V2 UART, 8N1, MMIO 0x11002000)
+- [x] Serial lock: `LCK..ttyS0` confirms app_process64 PID holds exclusive access to ttyS0
+
+### Unresolved
+
 - [ ] Gimbal axis-to-stick mapping (needs physical testing with one stick at a time)
 - [ ] Full gimbal value range (approximate -500 to +500 observed, full range unknown)
 - [ ] 0x15 field identification (which bytes are RSSI, LQ, SNR, TX power)
@@ -293,4 +304,3 @@ The MCU sends channel data to the app in 0x57 frames. The app processes mixing a
 - [ ] 0x0C config: does content change with model/settings changes?
 - [ ] How CRSF frames are packed within UMBUS (exact encapsulation format)
 - [ ] Channel data during active control: do additional bytes change?
-- [ ] Maximum number of channels in 0x57 frame (32 theoretical, need to verify)

@@ -44,7 +44,8 @@ a6 15 c3 02 00 ea 0a 3a ea ee 10 00 00 4e 20 00 00 1a 27 9f b7
 | 13-14 | `4E 20` | Data | Field 2 | 0x4E20 = 20000 decimal (timing/rate value) |
 | 15-16 | `00 00` | Data | Field 3 | Status/validity (0x0000=valid, 0xFFFF=invalid) |
 | 17 | `xx` | UMBUS | Counter | Monotonically incrementing sequence number |
-| 18-20 | `yy zz ww` | UMBUS | Checksum | UMBUS CRC/checksum (3 bytes) |
+| 18-19 | `yy zz` | Data | Payload | Varies; CRC-covered data (purpose unknown) |
+| 20 | `ww` | UMBUS | Checksum | CRC-8/MAXIM (init=0x32, computed over bytes 1-19) |
 
 ### UMBUS framing details (from UMBUS_GetPack disassembly at 0x152eca8)
 
@@ -207,7 +208,8 @@ This handler:
 | 15-16 | `00 00` (40/50 frames) | Normal: valid data / no downlink |
 | 15-16 | `FF FF` (10/50 frames) | Every 5th frame: invalid/timeout marker |
 | 17 | `1A`..`D6` | Incrementing counter; resets for FF-FF frames |
-| 18-20 | varies | UMBUS checksum/CRC |
+| 18-19 | varies | CRC-covered data (purpose unknown) |
+| 20 | varies | CRC-8/MAXIM checksum (init=0x32) |
 
 ### The every-5th-frame pattern
 

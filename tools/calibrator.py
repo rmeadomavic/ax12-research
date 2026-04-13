@@ -344,21 +344,19 @@ margin-bottom:8px;font-weight:600}
 .gbar{display:flex;align-items:center;gap:6px;margin:4px 0;height:20px}
 .gbar-label{width:24px;font-size:10px;color:var(--dim);flex-shrink:0}
 .gbar-track{flex:1;height:10px;background:#111420;border-radius:3px;position:relative;overflow:hidden}
-.gbar-fill{position:absolute;top:0;height:100%;background:var(--grn);border-radius:3px;
-transition:left .04s linear,width .04s linear;opacity:.8}
+.gbar-fill{position:absolute;top:0;height:100%;background:var(--grn);border-radius:3px;opacity:.8}
 .gbar-center{position:absolute;top:0;bottom:0;width:2px;background:var(--dim);opacity:.4}
 .gbar-range{position:absolute;top:0;height:100%;background:rgba(0,232,123,.15);border-radius:3px}
 .gbar-val{width:50px;font-size:10px;color:var(--grn);text-align:right;font-variant-numeric:tabular-nums}
 .gbar-name{width:60px;font-size:9px;color:var(--amb);text-align:right;overflow:hidden}
-/* Channel grid */
-.chgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 10px}
-.chr{display:flex;align-items:center;gap:4px;height:16px}
-.chr.hl{background:var(--hl);border-radius:3px;padding:0 3px;margin:0 -3px}
-.chl{width:28px;font-size:9px;color:var(--dim);flex-shrink:0}
-.chb-bg{flex:1;height:6px;background:#111420;border-radius:1px;position:relative;overflow:hidden}
-.chb{height:100%;background:var(--grn);border-radius:1px;transition:width .04s linear;opacity:.8}
-.chb.sw{background:var(--amb)}
-.ch-name{width:40px;font-size:8px;color:var(--amb);text-align:right;overflow:hidden}
+/* Channel table */
+.chtable{font-size:11px;line-height:1.8;font-variant-numeric:tabular-nums;columns:2;column-gap:12px}
+.chrow{display:flex;justify-content:space-between;break-inside:avoid;padding:1px 4px;border-radius:3px}
+.chrow.flash{background:var(--hl);transition:background .3s}
+.chrow .chlbl{color:var(--dim);width:36px;flex-shrink:0}
+.chrow .chval{color:var(--grn);font-weight:600;width:50px;text-align:right}
+.chrow .chtag{color:var(--amb);font-size:9px;width:55px;text-align:right;overflow:hidden}
+.chrow.idle .chval{color:var(--dim);font-weight:400}
 /* Sticks (post-mapping) */
 .sticks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .sbox{aspect-ratio:1;background:#0a0c14;border:1px solid var(--bdr);border-radius:8px;
@@ -441,7 +439,7 @@ border-bottom:1px solid var(--bdr)}.res-row:last-child{border:none}
 <!-- Channels -->
 <div class="card">
 <div class="card-title">Output Channels</div>
-<div class="chgrid" id="chgrid"></div>
+<div class="chtable" id="chtable"></div>
 </div>
 
 <!-- Results -->
@@ -464,7 +462,7 @@ border-bottom:1px solid var(--bdr)}.res-row:last-child{border:none}
 <script>
 const $=id=>document.getElementById(id);
 let center=null, mapping={}, rangeData=null;
-const highlighted=new Set();
+let latestCh=null; // latest channel data for 1Hz table refresh
 
 // Init gimbal bars
 for(let i=0;i<4;i++){
@@ -477,14 +475,34 @@ for(let i=0;i<4;i++){
     `<span class="gbar-name" id="gn-${i}"></span>`;
   $('gimbals').appendChild(d);
 }
-// Init channels
-for(let i=0;i<33;i++){
-  const r=document.createElement('div');r.className='chr';r.id='chr-'+i;
-  r.innerHTML=`<span class="chl">CH${String(i).padStart(2,'0')}</span>`+
-    `<div class="chb-bg"><div class="chb" id="chb-${i}"></div></div>`+
-    `<span class="ch-name" id="chn-${i}"></span>`;
-  $('chgrid').appendChild(r);
+
+// Channel table: 1Hz text refresh instead of 12Hz bar animation
+function describeVal(v){
+  if(v===32768)return'CENTER';if(v===65036||v===65436)return'SW_HI';
+  if(v<100)return'LOW';if(v>65000)return'HIGH';return'';
 }
+function refreshChannels(){
+  if(!latestCh)return;
+  const ch=latestCh;
+  const tbl=$('chtable');
+  let html='';
+  for(let i=0;i<Math.min(ch.length,33);i++){
+    const v=ch[i];
+    const tag=mapping[Object.keys(mapping).find(k=>{
+      const m=mapping[k];return m.type==='channel'&&(m.index===i||m.channel===i);
+    })]||null;
+    const name=tag?tag.label.split('(')[0].trim():'';
+    const desc=describeVal(v);
+    const isCenter=v===32768;
+    const changed=center&&center.channels&&Math.abs(v-center.channels[i])>500;
+    html+=`<div class="chrow${isCenter&&!changed?' idle':''}${changed?' flash':''}">`;
+    html+=`<span class="chlbl">CH${String(i).padStart(2,'0')}</span>`;
+    html+=`<span class="chval">${v}</span>`;
+    html+=`<span class="chtag">${name||desc}</span></div>`;
+  }
+  tbl.innerHTML=html;
+}
+setInterval(refreshChannels,1000);
 
 // SSE
 const es=new EventSource('/stream');
@@ -508,19 +526,8 @@ es.addEventListener('frame',e=>{
       const cm=$('gc-'+i);if(cm)cm.style.left=cp+'%';
     }
   }
-  // Channels
-  for(let i=0;i<Math.min(ch.length,33);i++){
-    const bar=$('chb-'+i);const row=$('chr-'+i);
-    if(!bar)continue;
-    bar.style.width=(ch[i]/65535*100)+'%';
-    bar.className='chb'+((ch[i]===65036||ch[i]===65436)?' sw':'');
-    if(center&&center.channels){
-      const delta=Math.abs(ch[i]-center.channels[i]);
-      if(delta>500)highlighted.add(i);else if(delta<200)highlighted.delete(i);
-      const want='chr'+(highlighted.has(i)?' hl':'');
-      if(row.className!==want)row.className=want;
-    }
-  }
+  // Store latest channel data for 1Hz table refresh
+  latestCh=ch;
   // Sticks (post-mapping)
   if(Object.keys(mapping).length>=4&&$('stick-card').style.display!=='none'){
     const m=mapping;

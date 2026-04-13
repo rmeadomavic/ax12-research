@@ -21,10 +21,10 @@
 │  │  GCS/Maps    │  Secondary bus (RF/data?)       │    (LR1121)   │  │
 │  └──────────────┘                                └───────────────┘  │
 │                                                                     │
-│  Serial ports:                                                      │
-│  - ttyS0 @ 921600: UMBUS protocol to MCU (primary link)             │
-│  - ttyS1 @ 9600:   Unused (no data observed)                        │
-│  - ttyS2:          Root-only permissions                             │
+│  Serial ports (all ST16650V2 UARTs, 8N1, clocal, no flow control):   │
+│  - ttyS0 @ 921600: UMBUS to MCU (MMIO 0x11002000) ✓ verified stty   │
+│  - ttyS1 @ 9600:   Silent, RTS/DTR asserted (MMIO 0x11003000) ✓     │
+│  - ttyS2 @ 9600:   Root-only (MMIO 0x11004000) — untested           │
 │                                                                     │
 │  SPI buses:                                                         │
 │  - spi@1100a000: DM9051 Ethernet (disabled), fingerprint (disabled) │
@@ -36,12 +36,13 @@
 │  - i2c@11007000: cap_touch @40                                      │
 │  - i2c@11008000: camera (main2)                                     │
 │  - i2c@11009000: camera (main, sub)                                 │
-│  - i2c@1100f000: ALS/proximity @1e, NFC @08                         │
+│  - i2c@1100f000: ALS/prox @1e (NOT POPULATED), NFC @08 (NOT POP.)   │
 │  - i2c@11011000: ICM-42607 IMU @68/@69, msensor @0c, nm_i2c1 @01   │
 │  - i2c@11017000: MT6370 sub-PMIC @34, USB-C @4e                     │
 │                                                                     │
 │  Other:                                                             │
-│  - ITE IT66121 HDMI bridge (video out capable)                      │
+│  - ITE IT66121 HDMI bridge (video out)                              │
+│  - Richnano RN6752M analog video decoder (HDMI in → MIPI CSI-2)    │
 │  - Mali Bifrost GPU                                                 │
 │  - WiFi/BT/GPS/FM via MT6631 combo chip                             │
 │  - 5.5" 1280x720 MIPI DSI touchscreen                              │
@@ -110,14 +111,16 @@ QML UI ─── QML Singletons ─── Communication ─── UMBUS Engine �
 
 ### Lua Scripting
 
-Embedded Lua 5.3.6 (EdgeTX-compatible):
-- Scripts at `/storage/emulated/0/AX12LUA/`
-- Types: tools, mixes, widgets
-- Serial bridge: `luaSetGetSerialByte()` for custom serial protocols
+Embedded Lua 5.3 VM with ROM table support (NodeMCU lineage patch). Full details: [lua-scripting.md](lua-scripting.md)
+- Scripts at `/sdcard/AX12LUA/SCRIPTS/TOOLS/`
+- Types: tools, mixes, widgets (follows OpenTX/EdgeTX `return {init=..., run=...}` convention)
+- Custom modules: `luaopen_bitmap` (LCD), `luaopen_etxdir` (dirs), `luaopen_lvgl` (UI framework)
+- Standard EdgeTX API: `crossfireTelemetryPush/Pop`, LCD drawing, input reading
+- Serial bridge: `luaSetGetSerialByte()` exists but serial functions are **dead stubs** on AX12 (see [Lua API](flyshark-lua-api.md#9-serial-port-access--dead-stubs))
 
 ### Channel System
 
-- **32 output channels** (CH01-CH32)
+- **33 output channels** (CH00-CH32)
 - Per-channel: reverse, slow motion, min/max, midpoint offset, curves, D/R
 - Mixer: multi-source mixing per channel
 - Sources: sticks, switches, pots, sliders, trims, logical switches
@@ -197,35 +200,71 @@ The MT8788 SoC includes sensor interfaces originally designed for a phone/tablet
 
 | Sensor | Chip | I2C Address | Bus | Status | Potential Use |
 |--------|------|-------------|-----|--------|---------------|
-| IMU (6-axis) | ICM-42607 | 0x68/0x69 | i2c@11011000 | Present | Head tracking, tilt control, crash detection |
+| IMU (6-axis) | ICM-42607 | 0x68/0x69 | i2c@11011000 | Active — drivers loaded, SensorService delivering data | Accel 125Hz, gyro 10-400Hz, FIFO 4500 events. 9-axis fusion available. Data path: SCP→HAL→SensorService (no direct I2C — no i2c-dev module). Not used by Flyshark for head-tracking |
 | Magnetometer | Unknown | 0x0c | i2c@11011000 | Present | Compass heading for GCS |
-| GPS | MT6631 combo | N/A | Internal | Hardware present, not exposed to apps | MadsTech reports no GPS detection in Android GPS apps; hardware exists in device tree but may lack driver/permissions |
-| ALS/Proximity | Unknown | 0x1e | i2c@1100f000 | Present | Auto-brightness |
-| NFC | Unknown | 0x08 | i2c@1100f000 | Present | Model/bind pairing? |
-| Camera (main) | Unknown | Various | i2c@11009000 | Wired, not populated | No camera module installed |
-| Camera (sub) | Unknown | Various | i2c@11009000 | Wired, not populated | No camera module installed |
+| GPS | MT6631 combo | /dev/stpgps (char 191,0) | Internal (STP transport) | Software functional, **NO ANTENNA POPULATED** | GNSS mode 1 (GPS+GLONASS), scans BeiDou. Daemons: mnld, mtk_agpsd, gnss@1.1-service, lbs_hidl_service. AGC: L1 ~2800-3100, L5 ~6300-6400 (thermal noise floor only — no antenna). Zero satellites acquired across hours of testing including window-mounted. GNSS RTC stuck at 2000-01-01 (never obtained a time fix). RadioMaster did not populate the ceramic patch antenna or RF trace on the PCB. **Unusable without external antenna hardware modification.** Not used by Flyshark. Test: `su 0 am start -n com.mediatek.ygps/.YgpsActivity` |
+| ALS/Proximity | Unknown | 0x1e | i2c@1100f000 | **NOT POPULATED** | Device tree entry inherited from MT8788 reference design. Full I2C bus scan with custom kernel module confirmed zero devices respond at this address. No physical sensor on PCB. |
+| NFC | Unknown | 0x08 | i2c@1100f000 | **NOT POPULATED** | Device tree entry inherited from MT8788 reference design. Full I2C bus scan with custom kernel module confirmed zero devices respond at this address. No physical chip on PCB. Kernel also compiled with CONFIG_NFC=n. |
+| Camera (main) | Unknown | Various | i2c@11009000 | Wired, **not populated** (confirmed) | Camera ISP framework present, 3 AF motor drivers and 3 EEPROM slots wired in DT, but no image sensor physically soldered. Camera thermal sensors read -127°C (powered off). |
+| Camera (sub) | Unknown | Various | i2c@11009000 | Wired, **not populated** (confirmed) | Same as main — ISP bus wired but no sensor on PCB. |
 
-The IMU and GPS are particularly interesting for GCS applications — the radio knows its own position and orientation. The NFC chip could enable tap-to-bind or tap-to-load-model workflows.
+The IMU is confirmed functional for GCS applications — the radio knows its own orientation. GPS software stack is fully operational but **the GNSS antenna was never populated on the PCB** — the RF frontend samples thermal noise only, acquiring zero satellites. GPS would require an external antenna hardware mod to be usable. NFC and ALS/proximity sensor entries in the device tree are inherited from the MT8788 reference design — **neither chip is physically populated on the AX12 PCB**. Full I2C bus 3 scan with a custom kernel module confirmed zero devices respond at either address.
+
+## Onboard Peripherals
+
+Peripherals confirmed via /sys, /dev, and device-tree probing (2026-04-13):
+
+| Peripheral | Interface | Path | Notes |
+|------------|-----------|------|-------|
+| RGB LED | sysfs | `/sys/class/leds/{red,green,blue}/brightness` | 0-255 range. Supports `timer`, `breath_mode`, `pwm_mode` triggers. Green was on at boot. |
+| Vibration motor | timed_output | `/sys/class/timed_output/vibrator/enable` | Write duration in ms to activate. |
+| Speaker | I2C (RT5509 Class-D amp) | Bus 6, addr 0x34 | Full Android audio stack, 33 PCM devices. |
+| Headphone jack | ACCDET | `/dev/accdet` (input event0) | Plug/unplug detection via MediaTek ACCDET driver. |
+| LCD backlight | sysfs | `/sys/class/leds/lcd-backlight/brightness` | 0-255 range. |
+| MT6370 PMU LEDs | sysfs | `/sys/class/leds/led{1-4}/brightness` | 4 ISINK channels. led1-led3 max brightness 6, led4 max brightness 3. |
+| NFC chip | I2C | Bus 3, addr 0x08 | **NOT POPULATED.** DT entry inherited from MT8788 reference design. Bus scan confirmed no device responds. Kernel also has CONFIG_NFC=n. |
+| FM Radio | char device | `/dev/fm` (char 213:0) | **Fully functional.** MT6631 combo chip, firmware mt6631_fm_v1_patch.bin loaded. Tunes 87.5-108.0 MHz. RSSI reads -114 dBm without antenna (needs headphone cable as antenna via 3.5mm jack). Pre-installed app: com.android.fmradio. Ioctl map: POWERUP=0xC008F500, TUNE=0xC008F502, GETRSSI=0xC008F507. |
+| Flash LEDs | MT6370 driver | — | Driver loaded but LEDs not physically populated (intended for camera connector). |
+| ALS/Proximity | I2C | Bus 3, addr 0x1E | **NOT POPULATED.** DT entry inherited from MT8788 reference design. Bus scan confirmed no device responds. |
+| Touchscreen | I2C | Bus 0, addr 0x40 | GSL680 (SiliconWorks), driver gslX680. |
+| Bluetooth | char device | `/dev/stpbt` | MT6631 combo chip, Android BT stack. |
+| Thermal sensors | sysfs | 24 zones | CPU ~41°C, Battery 25°C, PMIC 40°C, WiFi 48°C (typical idle). |
 
 ## Connectivity
 
 | Port | Location | Purpose |
 |------|----------|---------|
-| Mini HDMI In | Top edge | FPV video feed (DJI/Walksnail/HDZero/OpenIPC) |
+| Mini HDMI In | Top edge | FPV video feed (DJI/Walksnail/HDZero/OpenIPC). Internally: HDMI→analog→RN6752M→MIPI CSI-2 |
 | Mini HDMI Out | Top edge | Mirror display to external monitor |
-| USB-C (data) | Top edge | Trainer port, ADB, data transfer |
+| USB-C (data) | Top edge | Trainer port, ADB, data transfer. **Gadget mode only** (ADB/MTP/RNDIS). USB OTG host mode disabled — CONFIG_USB_MTK_OTG, CONFIG_SSUSB_DRV, CONFIG_SSUSB_MTK_XHCI all unset. XHCI host controller silicon present but glue driver not compiled. Custom kernel required for host mode. |
 | USB-C (charge) | Bottom edge | USB PD charging |
 | 3.5mm audio | Bottom edge | Headphone jack |
 | Nano module bay | Top edge | External RF module (ELRS, etc.) |
 
-## HDMI Input Latency
+## Video Input Pipeline
+
+The HDMI input does **not** use a Loitium HDMI-to-MIPI bridge as previously documented. The active video decoder is a **Richnano RN6752M** — an analog video decoder (AHD/TVI/CVI/CVBS to MIPI CSI-2).
+
+| Property | Value |
+|----------|-------|
+| Chip | Richnano RN6752M |
+| Sensor ID | 0x501 |
+| I2C | Bus 2, addr 0x36 |
+| MIPI | 4-lane CSI-2 |
+| Resolution | Up to 1080p |
+| MCLK | 26 MHz |
+| Input formats | AHD, TVI, CVI, CVBS |
+
+The HDMI input signal is converted to analog (likely by an upstream converter before the RN6752M), then decoded to MIPI CSI-2 for the MT8788 ISP. The previous "Loitium" reference may refer to an upstream chip in the signal chain or may have been incorrect.
+
+### HDMI Input Latency
 
 Per MadsTech testing with HDZero as a fixed-latency baseline:
 - HDZero VRX → HDZero goggles (HDMI): 6.4ms first pixel, 21.2ms full frame
 - HDZero VRX → AX12 (HDMI in): 144.2ms first pixel, 167.6ms full frame
 - Added latency from AX12 HDMI input: **~140ms**
 
-The display uses a smartphone-style panel that reads out in portrait orientation (right-to-left in landscape), adding to the perceived latency. Suitable for fixed-wing, long-range, and ground vehicles. Not suitable for proximity freestyle or racing.
+The ~140ms latency is consistent with a multi-stage conversion pipeline (HDMI → analog → MIPI CSI-2). The display also uses a smartphone-style panel that reads out in portrait orientation (right-to-left in landscape), adding to the perceived latency. Suitable for fixed-wing, long-range, and ground vehicles. Not suitable for proximity freestyle or racing.
 
 The AX12 supports MAVLink pass-through over ELRS, allowing QGroundControl telemetry directly on the touchscreen without separate telemetry radios.
 
@@ -236,6 +275,58 @@ The AX12 supports MAVLink pass-through over ELRS, allowing QGroundControl teleme
 - Battery fuel gauge reports 2946mAh (discrepancy under investigation)
 - RT9465 charger IC on I2C
 
+## Serial Port Details
+
+All three serial ports use ST16650V2 UARTs with 8N1 framing and clocal (ignore modem control) mode.
+
+| Port | Baud | MMIO Base | Status | Notes |
+|------|------|-----------|--------|-------|
+| ttyS0 | 921600 | 0x11002000 | Active — owned by app_process64 (Flyshark) | UMBUS protocol link to AT32 MCU. `LCK..ttyS0` lockfile present. No flow control. |
+| ttyS1 | 9600 | 0x11003000 | Silent — no process has it open | RTS/DTR modem control lines asserted (something configured them). Probed with 7 command types (newline, AT, `?`, version, help, 0x00, 0xA6 sync) at 9600 baud — zero bytes received. May be boot-only debug output, TX-only wiring, or require a different baud rate. |
+| ttyS2 | 9600 | 0x11004000 | Root-only, untested | Permissions restrict access. No traffic testing performed. |
+
+Baud rates verified 2026-04-13 via `su 0 stty -a -F /dev/ttyS<n>`.
+
+## Model Configuration Storage
+
+Model configs are stored as flat binary structs in the Flyshark app's private directory.
+
+**Location:** `/data/data/com.Flyshark.RadioMasterAX/files/`  
+**Format:** Fixed-size binary structs (NOT SQLite or other database)
+
+### .rcm Files (~1877 bytes each)
+
+| Offset | Size | Type | Description |
+|--------|------|------|-------------|
+| 0 | 4 | u32le | Magic: `0x12345678` |
+| 4 | 200 | char[] | Model name (null-padded) |
+| 204 | 256 | char[] | Icon path (null-padded) |
+| 460 | 4 | u32le | Timestamp (Unix epoch) |
+| 464 | 2 | u16le | Version |
+| 466 | 2 | u16le | Flags |
+| 468 | 32 | u8[32] | Trim values (center = 0x7F) |
+| 500 | 32 | u8[32] | Rate values (100% = 0x64) |
+| 532+ | var | — | Mixer configuration |
+| tail | 14×N | — | Channel endpoint records (14 bytes each) |
+
+### Active Model Pointer
+
+**File:** `RcCfgFile.rcCfg`  
+**Magic:** `0x4F61BC00` (little-endian)  
+**Purpose:** Points to the path of the currently active .rcm model file.
+
+### Templates (read-only)
+
+Four built-in model templates ship with the app:
+- FPVDrone
+- FixedWing
+- Helicopter
+- DeltaWing
+
+### Naming Convention
+
+User-created model files use Unix timestamps as filenames (e.g., `1681234567.rcm`).
+
 ## Detailed References
 
 - [Device Tree Analysis](device-tree.md) — Full SoC peripheral map
@@ -243,3 +334,5 @@ The AX12 supports MAVLink pass-through over ELRS, allowing QGroundControl teleme
 - [UMBUS Protocol](umbus-protocol.md) — Complete protocol specification
 - [Native Library Analysis](native-lib-analysis.md) — Class hierarchy, APIs, constants
 - [Root & Setup Guide](root-guide.md) — How to set up a dev environment
+- [ELRS Telemetry Analysis](elrs-telemetry-analysis.md) — RF link telemetry decoding
+- [Lua Scripting](lua-scripting.md) — Lua VM details, installed scripts, custom modules
