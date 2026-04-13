@@ -561,3 +561,80 @@ Both QCommUsart and QCommTcp implement:
 2. USB HID input handler means external HID devices (SpaceMouse, gamepads) are wired into the control path
 3. The UMBUS_StartPack/EndPack/GetPack API confirms multi-frame config transfers exist (model sync protocol)
 4. Three-address scheme (RC/FC/GIMBAL) shows UMBUS was designed as a multi-device bus, not just SoC-to-MCU
+
+
+## Application Class Architecture (488 classes, 141 key)
+
+### QGroundControl Heritage
+The Flyshark app is built on a QGroundControl fork with RadioMaster-specific extensions:
+- QGCMapEngine, QGCMapEngineManager, QGeoTiledMapQGC — QGC map tile engine
+- 30+ map providers (Google, Mapbox, Bing, Esri, OSM, LINZ, Statkart, etc.)
+- QMapWaypointData — mission/waypoint management
+- TerrainAirMapQuery, TerrainOfflineAirMapQuery — terrain elevation queries
+- TelemetryBlackBox — flight data recording
+
+### Flight Controller Integration
+| Class | Purpose |
+|-------|---------|
+| QML_Pack_AhrsReport | AHRS (attitude/heading reference) from FC |
+| QML_Pack_NavReport | Navigation/position data from FC |
+| QML_Pack_FlyReport | In-flight telemetry report |
+| QML_Pack_MissionData | Waypoint/mission data |
+| QML_Pack_FcFwInf | Flight controller firmware info |
+| QML_Pack_FcSet | FC settings configuration |
+| QML_Pack_GimbalCfg | Camera gimbal configuration |
+| QML_Pack_BlackBoxTelemetrySample | Blackbox telemetry record |
+| QML_Pack_FHSS_CFG_DATA | Frequency hopping spread spectrum config |
+| AppFcTaskCtr, AppSharkFcCtr, AppSharkFcSetting | FC task/control/settings |
+| QFcStateViewControl | FC status display |
+
+### Radio Model Configuration (matches .rcm binary format)
+| Class | Maps to .rcm section |
+|-------|---------------------|
+| QML_Pack_RcModelCfgData | Model config header |
+| QML_Pack_RcModelData | Full model data |
+| QML_Pack_RcChOutCfg | Channel output endpoints |
+| QML_Pack_RcChCfgDr | Channel dual-rate settings |
+| QML_Pack_RcCurveCfgData | Rate/expo curve data |
+| QML_Pack_RcMixCfgData | Mixer configuration |
+| QML_Pack_RcSrcCfg | Source (input) configuration |
+| QML_Pack_RcSrcRaw | Raw source input data |
+| QML_Pack_RcTimeCfgData | Timer configuration |
+
+### Lua Engine
+| Class | Purpose |
+|-------|---------|
+| LuaScriptManager | Script lifecycle management |
+| LuaEventData / LuaEventHandler | Event dispatch system |
+| LuaWidget / LuaWidgetFactory | Widget creation and rendering |
+| StandaloneLuaWindow | Full-screen Lua app display |
+| QLuaWidget | QML-embedded Lua widget |
+| LvglWidgetSwitchPicker | LVGL switch picker control |
+| LvglWidgetToggleSwitch | LVGL toggle switch control |
+
+### Communication Layer
+| Class | Transport |
+|-------|-----------|
+| QCommUsart | UART serial (ttyS0, primary) |
+| QCommTcp | TCP/IP (network UMBUS) |
+| QSerialPortLinux | Linux serial port driver |
+| CrsfSerial | CRSF protocol handler |
+
+### ELRS Module
+| Class | Purpose |
+|-------|---------|
+| QSharkRFModule | ELRS radio module control |
+| QElrsModule | ELRS configuration |
+| QML_Pack_ElrsSetItem | ELRS settings items |
+
+### Other Notable Classes
+| Class | Purpose |
+|-------|---------|
+| UsbSDConnected | USB storage detection |
+| ModelConfigData | Model config data management |
+| SwitchChoice | Switch input configuration |
+| ChannelBar / OutputChannelBar / MixerChannelBar | Channel display widgets |
+| LogicalSwitchesViewPage | Logical switch editor |
+| RadioTelemetry | Radio telemetry processing |
+| SimuDirHandle | Simulator directory handling |
+| LcdUpdateThread | Display update thread |
