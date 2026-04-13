@@ -98,3 +98,34 @@ Betaflight — the same debug tools and flash procedures apply.
    peripheral register names
 5. **Map UMBUS encoding** — correlate disassembled ADC/GPIO routines with
    known UMBUS frame fields to decode remaining unknowns
+
+
+## SWD Debug Access
+
+The AT32F435 uses FAP (Flash Access Protection), mirroring STM32's RDP:
+- **Level 0**: Unprotected. SWD can read all flash freely. Full firmware dump is trivial.
+- **Level 1**: Debug reads blocked. Reversible only with full flash erase.
+- **Level 2**: Permanent. JTAG/SWD disabled entirely.
+
+### Tool Support
+- **J-Link**: Supported via Artery device pack (DFP)
+- **OpenOCD**: Artery's fork supports AT32F435 (bundled with AT32 IDE)
+- **pyOCD**: Supported via CMSIS pack
+- **Artery ICP Programmer**: Free proprietary tool
+
+### Procedure
+1. Locate SWD pads on PCB (standard ARM: SWDIO + SWCLK + GND + optional nRST)
+2. Connect J-Link or ST-Link clone
+3. Check FAP level first
+4. If Level 0: dump full flash immediately
+5. If Level 1: can connect but reads fail — need voltage glitching (no published AT32-specific bypass)
+6. If Level 2: debug interface is permanently disabled
+
+### AX12 Thermal Zones
+| Zone | Type | Description |
+|------|------|-------------|
+| thermal_zone0 | mtktsbattery | Battery: 25.0C (idle) |
+| thermal_zone1 | mtktscpu | CPU: 50.6C (under load) |
+| thermal_zone2 | mtktspa | Power amplifier: -127C (not present/invalid) |
+| thermal_zone3 | mtktspmic | PMIC |
+| thermal_zone4 | mtktswmt | WiFi/BT combo chip |
