@@ -40,7 +40,7 @@ Hardware capabilities found through reverse engineering that are not documented 
 
 | Discovery | Status | Details |
 |-----------|--------|---------|
-| **GPS Receiver** | Confirmed working | MT6631 GNSS: GPS + GLONASS + BeiDou, 19 satellites, 13m accuracy. Hidden behind Android location services -- no UI exposes it. |
+| **GPS Receiver** | Confirmed working | MT6631 GNSS: GPS + GLONASS + BeiDou, 19 satellites. Uses shared PCB antenna via MT6631 combo chip (WiFi/BT/GPS/FM). Confirmed receiving satellites indoors near window. |
 | **FM Radio** | Chip responds, antenna TBD | MT6631 FM tuner (87.5-108 MHz). Full ioctl control working. Headphone antenna path may not be wired on AX12 PCB -- needs hardware investigation. |
 | **USB HID Gamepad** | Ready to deploy | Kernel has CONFIG_USB_F_HID=y. ConfigFS hid.gs0 function pre-created at boot. Init RC has property trigger. |
 | **AI Accelerator** | Hardware confirmed | MediaTek VPU/APU with NNAPI HAL service running and 33MB ION memory allocated. |
@@ -201,7 +201,7 @@ All Python tools are Python 3.13, stdlib only — no external dependencies.
 | RF | ELRS internal (Semtech LR1121), 250 mW / 24 dBm max, 2.4 GHz or 868/915 MHz (not simultaneous, no Gemini-X), 2 dBi antenna |
 | Module Bay | Nano module bay (top edge) for external RF modules |
 | Gimbals | X5 Hall-Effect, 4 axes, removable/storable, upgradeable to AG01 Nano |
-| Sensors | ICM-42607 6-axis IMU, magnetometer, GPS (no antenna populated) |
+| Sensors | ICM-42607 6-axis IMU, magnetometer, GPS (shared antenna via MT6631 combo chip) |
 | Connectivity | WiFi, Bluetooth, FM radio. No SIM slot, no camera. |
 | Video In | Mini HDMI input → Richnano RN6752M (HDMI-to-MIPI CSI-2), 720p/1080p up to 60 Hz, ~140ms latency |
 | Video Out | Mini HDMI output (IT66121 bridge), mirrors Android display |
