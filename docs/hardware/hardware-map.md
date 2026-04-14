@@ -19,7 +19,10 @@
 │  │  Lua 5.3     │  SPI1 (mt8788_spi1_plat_drv)   │ Controls:     │  │
 │  │              │◄──────────────────────────────►│  - ELRS TX    │  │
 │  │  GCS/Maps    │  Secondary bus (RF/data?)       │    (LR1121)   │  │
-│  └──────────────┘                                └───────────────┘  │
+│  └──────────────┘                                │  + ext PA/FE  │  │
+│                                                  └───────────────┘  │
+│  Internal architecture: multi-board (compute module + I/O board,     │
+│  per teardown videos). WiFi/BT share a single antenna.              │
 │                                                                     │
 │  Serial ports (all ST16650V2 UARTs, 8N1, clocal, no flow control):   │
 │  - ttyS0 @ 921600: UMBUS to MCU (MMIO 0x11002000) ✓ verified stty   │
@@ -244,7 +247,7 @@ Peripherals confirmed via /sys, /dev, and device-tree probing (2026-04-13):
 | Port | Location | Purpose |
 |------|----------|---------|
 | Mini HDMI In | Top edge | FPV video feed (DJI/Walksnail/HDZero/OpenIPC). Internally: HDMI→analog→RN6752M→MIPI CSI-2 |
-| Mini HDMI Out | Top edge | Mirror display to external monitor |
+| Mini HDMI Out | Top edge | Mirror display to external monitor (includes Android UI overlays — no clean output mode) |
 | USB-C (data) | Top edge | Trainer port, ADB, data transfer. Default: gadget mode (ADB/MTP/RNDIS). **USB OTG host mode: hardware supported, software-switchable via sysfs (no custom kernel needed).** See [USB OTG Host Mode](#usb-otg-host-mode) below. |
 | USB-C (charge) | Bottom edge | USB PD charging only — **no data lines** (per QSG diagram) |
 | 3.5mm audio | Bottom edge | Headphone jack |
@@ -337,6 +340,7 @@ The AX12 supports MAVLink pass-through over ELRS, allowing QGroundControl teleme
 - USB-C PD charging port (bottom edge, **charge only — no data lines**), up to 20W measured (QSG says max 30W)
 - 0% to 80% in ~70 minutes (measured by Oscar Liang)
 - Claimed runtime: 8+ hours (RadioMaster), ~6 hours (unmanned.tech)
+- **Runtime analysis:** 10,000 mAh × 3.7V = ~37 Wh. At 1.10A working current (max RF), that implies ~9.1 hours. The ~6 hour real-world figure implies ~1.7A average draw (~6.2W), plausible with screen at high brightness + WiFi + HDMI/GPU workloads active.
 - Battery fuel gauge reports 2946mAh (discrepancy under investigation — likely per-cell capacity, 2×2946 ≈ 5900mAh, still short of 10,000mAh claim)
 - RT9465 secondary charger IC on I2C bus 6
 - MT6370 sub-PMIC handles USB-C PD negotiation (TCPC at I2C bus 5, addr 0x4E)
@@ -621,7 +625,8 @@ This is NOT practical without significant PCB modification and is listed for com
 | Weight | ~650g | unmanned.tech review |
 | Dimensions | 171 × 168 × 73 mm | Oscar Liang review (matches RadioMaster spec) |
 | Screen brightness | 1000 nits (outdoor-readable) | Oscar Liang review, unmanned.tech review |
-| Max TX power | 250 mW / 24 dBm (dynamic power) | QSG specs, Oscar Liang review, unmanned.tech review |
+| Max TX power | 250 mW / 24 dBm (dynamic power). **Note:** some mirrored manuals list 20 dBm; official QSG says 24 dBm. Needs RF bench test to resolve. | QSG specs, Oscar Liang review, unmanned.tech review |
+| External PA (inferred) | LR1121 internal 2.4 GHz PA path is only +11.5 dBm (per Semtech datasheet). Achieving 24 dBm at 2.4 GHz **requires an external PA/front-end module** — not yet identified on PCB. Sub-GHz PA path is +22 dBm, closer to the 24 dBm claim. | Semtech LR1121 datasheet vs AX12 QSG claim |
 | Antenna gain | 2 dBi | QSG specs |
 | RF frequency | 2.400–2.480 GHz (2.4 GHz version) | QSG specs |
 | RF bands | 2.4 GHz **or** 868/915 MHz — not simultaneous, **no Dual-band Gemini-X** | Oscar Liang review |
@@ -640,7 +645,7 @@ This is NOT practical without significant PCB modification and is listed for com
 | Connectivity | WiFi, Bluetooth — **no SIM, no GPS antenna, no camera** | Oscar Liang review |
 | IMU / Accelerometer | Oscar Liang states "no accelerometer" — **incorrect**: ICM-42607 6-axis IMU confirmed present and active on I2C bus 1 (see [Onboard Sensors](#onboard-sensors)) | Oscar Liang review vs. device audit |
 | HDMI input | Mini HDMI, 720p/1080p up to 60 Hz. Compatible: Walksnail, HDZero, OpenIPC, DJI (with additional hardware). ~140ms added latency. | Oscar Liang review |
-| HDMI output | Mini HDMI, mirrors Android display to external monitor | Oscar Liang review |
+| HDMI output | Mini HDMI, mirrors full Android display to external monitor — **includes UI overlays** (status bar, icons). No "clean output" mode reported; community suggests app-based streaming as workaround. | Oscar Liang review, intoFPV forum |
 | HDMI jitter | Reported with RunCam OpenIPC sources | unmanned.tech review |
 | DJI Fly app | Works via USB-C for DJI Goggles 2/3 video output. Requires USB debugging enabled, USB-A to USB-C cable with adapter (A-end to goggles). USB-C to USB-C OTG cables did not work. | Oscar Liang review |
 | SpeedyBee app | Works via Bluetooth (SpeedyBee Adapter 3). USB connection did not work. | Oscar Liang review |
