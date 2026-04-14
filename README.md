@@ -142,18 +142,25 @@ All Python tools are Python 3.13, stdlib only — no external dependencies.
 
 | Component | Detail |
 |-----------|--------|
-| SoC | MediaTek MT8788 (4x Cortex-A53 + 4x Cortex-A73) |
+| SoC | MediaTek MT8788 (4x Cortex-A53 + 4x Cortex-A73), TSMC 12nm |
+| GPU | Mali-G72 MP3 (Bifrost architecture) |
 | MCU | AT32F435 (Artery Tek) — Cortex-M4F @ 288 MHz, handles gimbals, switches, RF module |
-| Kernel | Linux 4.4.146, Android 9 (Pie), userdebug build |
+| Kernel | Linux 4.4.146, Android 9 (Pie), userdebug build. **Android cannot be updated.** |
 | RAM | 4 GB (1 GB ZRAM swap) |
 | Storage | 64 GB eMMC, 38 partitions |
-| Display | 5.5" 1280x720 MIPI DSI touchscreen |
-| Battery | 10,000 mAh |
-| RF | ELRS internal (Semtech LR1121) + external module bay |
-| Gimbals | X5 Hall-Effect, 4 axes, removable, upgradeable to AG01 |
+| Display | 5.5" 1280x720 MIPI DSI touchscreen, 1000 nits max brightness |
+| Battery | Dual 3.7V 21700 Li-ion, 10,000 mAh total, non-removable. USB PD charging up to 20W. |
+| RF | ELRS internal (Semtech LR1121), 250 mW max, 2.4 GHz or 868/915 MHz (not simultaneous, no Gemini-X) |
+| Module Bay | Nano module bay (top edge) for external RF modules |
+| Gimbals | X5 Hall-Effect, 4 axes, removable/storable, upgradeable to AG01 Nano |
 | Sensors | ICM-42607 6-axis IMU, magnetometer, GPS (no antenna populated) |
-| Connectivity | WiFi, Bluetooth, FM radio, HDMI out (IT66121 bridge) |
-| Video In | Richnano RN6752M analog decoder (HDMI-to-MIPI CSI-2) |
+| Connectivity | WiFi, Bluetooth, FM radio. No SIM slot, no camera. |
+| Video In | Mini HDMI input → Richnano RN6752M (HDMI-to-MIPI CSI-2), 720p/1080p up to 60 Hz, ~140ms latency |
+| Video Out | Mini HDMI output (IT66121 bridge), mirrors Android display |
+| Weight | 640g claimed / 649g measured |
+| Dimensions | 171 × 168 × 73 mm |
+| Boot time | ~40 seconds |
+| Price | $249.99 USD |
 
 ## Project Status
 
