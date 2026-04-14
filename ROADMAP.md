@@ -35,6 +35,7 @@ Edge cases and deeper analysis that would complete the picture.
 Active work with partial results.
 
 - **USB OTG host mode** — Sysfs toggle found: `device_host_gpio_attr` is world-writable, MUSB cmode and dual-role port mode are switchable from userspace. No custom kernel needed. **Needs physical testing** with a USB-C OTG adapter and connected device to confirm full enumeration, VBUS sourcing, and data transfer. See [hardware-map.md USB OTG section](docs/hardware/hardware-map.md#usb-otg-host-mode).
+- **Trainer host mode** — The "Host" option in radio settings is the wireless trainer (buddy box) host/master mode, derived from EdgeTX's trainer system. Investigation scripts prepared: `scripts/trainer-probe.lua` (Lua API probe) and `scripts/search-host-strings.sh` (native library string search). **Needs on-device execution** to capture protocol-level changes when the setting is toggled, and to enumerate the full RcSetSystem settings page. See [host-trainer-mode.md](docs/software/host-trainer-mode.md).
 
 ## Recently Resolved
 
