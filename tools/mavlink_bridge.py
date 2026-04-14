@@ -1155,7 +1155,7 @@ class TestMode:
         signal.signal(signal.SIGTERM, self._signal)
 
         # Synthetic orbit parameters
-        # Fort Bragg / Camp Mackall area -- recognizable to SORCC students
+        # Fort Bragg / Camp Mackall area -- near Camp Mackall, NC
         center_lat = 35.1395
         center_lon = -79.0064
         orbit_radius = 0.002  # ~220m
