@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "current_step": "save",
+  "completed_steps": [
+    "discovery",
+    "gimbal_id",
+    "gimbal_cal",
+    "switches",
+    "rollers",
+    "trims",
+    "verify"
+  ],
+  "gimbals": {
+    "throttle": {
+      "channel": 2,
+      "type": "gimbal",
+      "min": -500,
+      "center": -485,
+      "max": 500
+    },
+    "yaw": {
+      "channel": 0,
+      "type": "gimbal",
+      "min": -490,
+      "center": 3,
+      "max": 500
+    },
+    "pitch": {
+      "channel": 1,
+      "type": "gimbal",
+      "min": -500,
+      "center": -1,
+      "max": 500
+    },
+    "roll": {
+      "channel": 3,
+      "type": "gimbal",
+      "min": -500,
+      "center": 1,
+      "max": 485
+    }
+  },
+  "switches": {
+    "SA": {
+      "channel": 14,
+      "type": "5pos",
+      "values": [
+        128,
+        500,
+        3072,
+        62592,
+        65036
+      ]
+    },
+    "SB": {
+      "channel": 15,
+      "type": "4pos",
+      "values": [
+        0,
+        500,
+        3326,
+        65036
+      ]
+    },
+    "SC": {
+      "channel": 16,
+      "type": "6pos",
+      "values": [
+        0,
+        128,
+        254,
+        500,
+        3326,
+        65036
+      ]
+    },
+    "SD": {
+      "channel": 6,
+      "type": "4pos",
+      "values": [
+        3,
+        500,
+        32768,
+        62592
+      ]
+    },
+    "SF": {
+      "channel": 3,
+      "type": "2pos",
+      "values": [
+        22438,
+        32768
+      ]
+    },
+    "SE": {
+      "channel": 18,
+      "type": "5pos",
+      "values": [
+        0,
+        500,
+        32768,
+        62592,
+        65036
+      ]
+    }
+  },
+  "rollers": {},
+  "selector_6pos": {},
+  "trims": {},
+  "buttons": {},
+  "serial_mode": "exclusive",
+  "created": "2026-04-14T03:57:23Z",
+  "updated": "2026-04-14T04:00:30Z"
+}

@@ -820,8 +820,14 @@ const wizard = {
   _onGimbalId(data) {
     if (!this.detecting || this.baseline === null) return;
     const gimbals = data.gimbals || [0,0,0,0];
+    // Build set of already-identified gimbal indices to exclude
+    const usedIndices = new Set();
+    GIMBAL_LABELS.forEach(l => {
+      if (cal.gimbals[l]) usedIndices.add(cal.gimbals[l].channel);
+    });
     let maxDelta = 0, maxIdx = -1;
     for (let i = 0; i < 4; i++) {
+      if (usedIndices.has(i)) continue; // skip already-assigned gimbals
       const delta = Math.abs(gimbals[i] - (this.gimbals[i] || 0));
       if (delta > maxDelta) { maxDelta = delta; maxIdx = i; }
     }
@@ -1786,6 +1792,24 @@ dom.btnReset.onclick = () => wizard._doReset();
 let sse = null;
 let sseRetryCount = 0;
 
+// Median-of-3 noise filter — keeps a 3-frame history per channel,
+// returns the median value to suppress single-frame spikes.
+const _filterHistory = {};
+function medianFilter(values) {
+  if (!values || !values.length) return values;
+  const key = values.length; // separate histories by array length (gimbals vs channels)
+  if (!_filterHistory[key]) _filterHistory[key] = values.map(() => []);
+  const hist = _filterHistory[key];
+  return values.map((v, i) => {
+    if (!hist[i]) hist[i] = [];
+    hist[i].push(v);
+    if (hist[i].length > 3) hist[i].shift();
+    if (hist[i].length < 3) return v; // not enough history yet
+    const sorted = [...hist[i]].sort((a, b) => a - b);
+    return sorted[1]; // median
+  });
+}
+
 function connectSSE() {
   if (sse) { try { sse.close(); } catch(e) {} }
   sse = new EventSource('/stream');
@@ -1794,6 +1818,9 @@ function connectSSE() {
     sseRetryCount = 0;
     let data;
     try { data = JSON.parse(e.data); } catch(err) { return; }
+    // Median-of-3 filter to suppress single-frame noise spikes
+    data.gimbals = medianFilter(data.gimbals);
+    data.channels = medianFilter(data.channels);
     updateDashboard(data);
     wizard.onData(data);
   };
