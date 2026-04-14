@@ -28,7 +28,7 @@ RadioMaster put a phone-grade SoC into a transmitter and barely scratched the su
 
 **It runs Meshtastic.** Install the app, pair a node, join the mesh network. Combined with CoT, pilot position goes over LoRa to the whole team.
 
-**23+ Lua scripts ready to run.** CCIP targeting reticle, TAK-style HUD, compass, race timer, mission timer, MGRS converter, pre-flight checklist, VTx channel manager, FPV simulator, and more.
+**25+ Lua scripts ready to run.** CCIP targeting reticle, TAK-style HUD, compass, race timer, mission timer, MGRS converter, pre-flight checklist, VTx channel manager, FPV simulator, and more.
 
 **Full UMBUS protocol decoded.** 8 frame types, CRC-8/MAXIM checksums with per-type init values, 33 channels mapped. This is the foundation everything builds on.
 
