@@ -10,6 +10,7 @@ Run:
     # or
     python3 tools/test_strace_parser.py
 """
+import json
 import os
 import sys
 import unittest
@@ -25,6 +26,9 @@ _spec.loader.exec_module(strace_parser)
 
 extract_hex_from_strace = strace_parser.extract_hex_from_strace
 parse_strace_syscalls = strace_parser.parse_strace_syscalls
+frame_to_dict = strace_parser.frame_to_dict
+decode_frames_from_text = strace_parser.decode_frames_from_text
+export_json = strace_parser.export_json
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IDLE_STRACE = os.path.join(REPO_ROOT, 'captures', 'idle-strace.txt')
@@ -218,6 +222,149 @@ class TestRealStrace(unittest.TestCase):
                     frame_count += 1
         # Should decode at least some frames
         self.assertGreater(frame_count, 0)
+
+
+# ===================================================================
+# JSON Export
+# ===================================================================
+
+class TestFrameToDict(unittest.TestCase):
+    """Test frame_to_dict and JSON export."""
+
+    def test_channel_data_dict(self):
+        """CHANNEL_DATA frame dict should include gimbals and channels."""
+        from umbus import UMBUSFrame, FrameType, verify_checksum
+        frames_json_path = os.path.join(REPO_ROOT, 'captures', 'frames.json')
+        with open(frames_json_path) as f:
+            data = json.load(f)
+
+        # Find a CHANNEL_DATA frame from the reference file
+        ref = None
+        for entry in data['frames']:
+            if entry['n'] == 'CHANNEL_DATA':
+                ref = entry
+                break
+        self.assertIsNotNone(ref)
+
+        raw = bytes.fromhex(ref['h'])
+        frame = UMBUSFrame(frame_type=raw[1], raw=raw,
+                           checksum_valid=verify_checksum(raw))
+        d = frame_to_dict(frame)
+
+        self.assertEqual(d['t'], FrameType.CHANNEL_DATA)
+        self.assertEqual(d['n'], 'CHANNEL_DATA')
+        self.assertEqual(d['s'], len(raw))
+        self.assertEqual(d['h'], ref['h'])
+        self.assertEqual(d['ok'], True)
+        self.assertIn('g', d)
+        self.assertIn('ch', d)
+        self.assertEqual(d['g'], ref['g'])
+        self.assertEqual(d['ch'], ref['ch'])
+
+    def test_heartbeat_dict_no_gimbals(self):
+        """Non-channel frames should not include gimbals or channels."""
+        from umbus import UMBUSFrame, HEARTBEAT_MCU_FIXED
+        frame = UMBUSFrame(frame_type=0x08, raw=HEARTBEAT_MCU_FIXED)
+        d = frame_to_dict(frame)
+
+        self.assertEqual(d['n'], 'HEARTBEAT_MCU')
+        self.assertNotIn('g', d)
+        self.assertNotIn('ch', d)
+
+    def test_elrs_dict_no_gimbals(self):
+        """ELRS_TELEM frame dict should not include gimbals or channels."""
+        from umbus import UMBUSFrame, FrameType, verify_checksum
+        frames_json_path = os.path.join(REPO_ROOT, 'captures', 'frames.json')
+        with open(frames_json_path) as f:
+            data = json.load(f)
+
+        for entry in data['frames']:
+            if entry['n'] == 'ELRS_TELEM':
+                raw = bytes.fromhex(entry['h'])
+                frame = UMBUSFrame(frame_type=raw[1], raw=raw,
+                                   checksum_valid=verify_checksum(raw))
+                d = frame_to_dict(frame)
+                self.assertEqual(d['n'], 'ELRS_TELEM')
+                self.assertNotIn('g', d)
+                self.assertNotIn('ch', d)
+                break
+
+
+class TestDecodeFramesFromText(unittest.TestCase):
+    """Test decode_frames_from_text helper."""
+
+    SAMPLE = (
+        '[pid 14372] 07:05:03.963555 read(94, "\\xa6\\x08\\x10\\x02\\x04\\x03\\x00", 32768) = 7\n'
+        ' | 00000  a6 08 10 02 04 03 00                              .......          |\n'
+    )
+
+    def test_returns_decoder_and_frames(self):
+        decoder, frames = decode_frames_from_text(self.SAMPLE)
+        self.assertGreater(len(frames), 0)
+        self.assertEqual(frames[0].frame_type, 0x08)
+
+    def test_empty_input(self):
+        decoder, frames = decode_frames_from_text("")
+        self.assertEqual(len(frames), 0)
+
+    @unittest.skipUnless(os.path.exists(IDLE_STRACE), "idle-strace.txt not found")
+    def test_real_strace(self):
+        with open(IDLE_STRACE) as f:
+            text = f.read()
+        decoder, frames = decode_frames_from_text(text)
+        self.assertGreater(len(frames), 0)
+
+
+class TestExportJson(unittest.TestCase):
+    """Test JSON export produces valid, parseable output."""
+
+    @unittest.skipUnless(os.path.exists(IDLE_STRACE), "idle-strace.txt not found")
+    def test_json_roundtrip(self):
+        """JSON export should produce valid JSON matching frames.json schema."""
+        with open(IDLE_STRACE) as f:
+            text = f.read()
+        decoder, frames = decode_frames_from_text(text)
+        total_bytes = sum(len(f.raw) for f in frames)
+        output = export_json(frames, total_bytes)
+
+        data = json.loads(output)
+        self.assertIn('bytes', data)
+        self.assertIn('frames', data)
+        self.assertEqual(data['bytes'], total_bytes)
+        self.assertEqual(len(data['frames']), len(frames))
+
+        # Verify each frame entry has the required keys
+        for entry in data['frames']:
+            self.assertIn('t', entry)
+            self.assertIn('n', entry)
+            self.assertIn('s', entry)
+            self.assertIn('h', entry)
+            self.assertIn('ok', entry)
+
+    @unittest.skipUnless(os.path.exists(IDLE_STRACE), "idle-strace.txt not found")
+    def test_json_channel_data_fields(self):
+        """CHANNEL_DATA entries in JSON should have gimbals and channels."""
+        with open(IDLE_STRACE) as f:
+            text = f.read()
+        decoder, frames = decode_frames_from_text(text)
+        total_bytes = sum(len(f.raw) for f in frames)
+        output = export_json(frames, total_bytes)
+        data = json.loads(output)
+
+        ch_entries = [e for e in data['frames'] if e['n'] == 'CHANNEL_DATA']
+        self.assertGreater(len(ch_entries), 0)
+        for entry in ch_entries:
+            self.assertIn('g', entry)
+            self.assertIn('ch', entry)
+            self.assertEqual(len(entry['g']), 4)
+            self.assertGreater(len(entry['ch']), 0)
+
+    def test_json_empty(self):
+        """Empty frames list should produce valid JSON."""
+        output = export_json([], 0)
+        data = json.loads(output)
+        self.assertEqual(data['bytes'], 0)
+        self.assertEqual(data['frames'], [])
 
 
 if __name__ == '__main__':
