@@ -142,15 +142,15 @@ All Python tools are Python 3.13, stdlib only — no external dependencies.
 
 | Component | Detail |
 |-----------|--------|
-| SoC | MediaTek MT8788 (4x Cortex-A53 + 4x Cortex-A73), TSMC 12nm |
-| GPU | Mali-G72 MP3 (Bifrost architecture) |
+| SoC | MediaTek MT8788 (4x Cortex-A73 @ 2.0 GHz + 4x Cortex-A53 @ 2.0 GHz), TSMC 12nm |
+| GPU | Mali-G72 MP3 (Bifrost), 700 MHz |
 | MCU | AT32F435 (Artery Tek) — Cortex-M4F @ 288 MHz, handles gimbals, switches, RF module |
 | Kernel | Linux 4.4.146, Android 9 (Pie), userdebug build. **Android cannot be updated.** |
 | RAM | 4 GB (1 GB ZRAM swap) |
 | Storage | 64 GB eMMC, 38 partitions |
-| Display | 5.5" 1280x720 MIPI DSI touchscreen, 1000 nits max brightness |
+| Display | 5.5" 1280x720 IPS touchscreen, 1000 nits max brightness |
 | Battery | Dual 3.7V 21700 Li-ion, 10,000 mAh total, non-removable. USB PD charging up to 20W. |
-| RF | ELRS internal (Semtech LR1121), 250 mW max, 2.4 GHz or 868/915 MHz (not simultaneous, no Gemini-X) |
+| RF | ELRS internal (Semtech LR1121), 250 mW / 24 dBm max, 2.4 GHz or 868/915 MHz (not simultaneous, no Gemini-X), 2 dBi antenna |
 | Module Bay | Nano module bay (top edge) for external RF modules |
 | Gimbals | X5 Hall-Effect, 4 axes, removable/storable, upgradeable to AG01 Nano |
 | Sensors | ICM-42607 6-axis IMU, magnetometer, GPS (no antenna populated) |
