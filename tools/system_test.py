@@ -33,8 +33,13 @@ SKIP = 'SKIP'
 def run_cmd(cmd, timeout=10):
     """Run a shell command and return (returncode, stdout, stderr)."""
     try:
+        env = os.environ.copy()
+        termux_bin = "/data/data/com.termux/files/usr/bin"
+        if termux_bin not in env.get("PATH", ""):
+            env["PATH"] = termux_bin + ":" + env.get("PATH", "")
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, timeout=timeout
+            cmd, shell=True, capture_output=True, text=True, timeout=timeout,
+            env=env,
         )
         return result.returncode, result.stdout.strip(), result.stderr.strip()
     except subprocess.TimeoutExpired:
@@ -285,7 +290,7 @@ def test_demo_server():
         return SKIP, 'demo_server.py not found'
     # Verify the file is parseable Python
     rc, out, err = run_cmd(
-        'python3 -c "import ast; ast.parse(open(\'{}\').read())"'.format(demo_path)
+        '{} -c "import ast; ast.parse(open(\'{}\').read())"'.format(sys.executable, demo_path)
     )
     if rc == 0:
         return PASS, 'demo_server.py parses OK'

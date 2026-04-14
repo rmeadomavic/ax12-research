@@ -33,3 +33,4 @@ Thumbs.db
 tools/SensorReader*
 tools/sensor_reader
 tools/oat/
+data/model-backup-*/
