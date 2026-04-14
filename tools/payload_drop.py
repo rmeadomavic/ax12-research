@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Payload Drop Point Calculator for RadioMaster AX12.
 
-Training tool for Special Forces drone operators. Calculates optimal
+Training tool for drone operators. Calculates optimal
 release points for aerial payload drops accounting for altitude,
 groundspeed, wind, and aerodynamic drag.
 

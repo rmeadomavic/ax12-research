@@ -8,7 +8,7 @@
 #   bash scripts/atak-bridge.sh --host 192.168.1.5  # specific ATAK device
 #   bash scripts/atak-bridge.sh --test              # synthetic data (no GPS needed)
 #
-# For SORCC students: this makes your transmitter appear on the ATAK map.
+# Makes your transmitter appear on the ATAK map.
 # Your drone controller now knows where YOU are.
 
 PY=/data/data/com.termux/files/usr/bin/python3
@@ -41,7 +41,7 @@ fi
 # Parse arguments
 HOST="127.0.0.1"
 PORT="4242"
-UID_NAME="SORCC-Pilot-1"
+UID_NAME="AX12-Pilot-1"
 EXTRA_ARGS=""
 
 while [ $# -gt 0 ]; do
