@@ -98,7 +98,7 @@ def parse_location_line(line):
 
 def get_locations():
     """Get all last known locations from dumpsys location."""
-    output = run_cmd('dumpsys location')
+    output = run_cmd('su 0 dumpsys location')
     locations = {}
 
     # Find the Last Known Locations section
@@ -326,7 +326,7 @@ def cmd_nmea():
 
 def cmd_satellites():
     """Show satellite information if available from dumpsys."""
-    output = run_cmd('dumpsys location')
+    output = run_cmd('su 0 dumpsys location')
 
     print('=' * 50)
     print('  GNSS / SATELLITE INFO')
