@@ -54,31 +54,6 @@ Hardware capabilities found through reverse engineering that are not documented 
 | **Factory Root** | Confirmed | Ships with SUID su binary, userdebug build, SELinux permissive. No exploit needed. |
 
 These findings apply to firmware K908-V2.0-XY8788WA. Other firmware versions may differ.
-
-
-
-## New Discoveries
-
-Hardware capabilities found through reverse engineering that are not documented by RadioMaster or mentioned in any review.
-
-| Discovery | Status | Details |
-|-----------|--------|---------|
-| **GPS Receiver** | Confirmed working | MT6631 GNSS: GPS + GLONASS + BeiDou, 19 satellites, 13m accuracy. Hidden behind Android location services -- no UI exposes it. |
-| **FM Radio** | Chip responds, antenna TBD | MT6631 FM tuner (87.5-108 MHz). Full ioctl control working. Headphone antenna path may not be wired on AX12 PCB -- needs hardware investigation. |
-| **USB HID Gamepad** | Ready to deploy | Kernel has CONFIG_USB_F_HID=y. ConfigFS hid.gs0 function pre-created at boot. Init RC has property trigger. |
-| **AI Accelerator** | Hardware confirmed | MediaTek VPU/APU with NNAPI HAL service running and 33MB ION memory allocated. |
-| **9-DOF IMU** | Hardware present, driver broken | ICM-42607: 400Hz gyro, 125Hz accel, 50Hz magnetometer. Sensor HAL expects missing device nodes. Firmware fix needed from RadioMaster. |
-| **HDMI Output** | Hardware confirmed | ITE IT66121 HDMI 1.4 transmitter on I2C. Driver loaded, currently disabled in software. |
-| **Miracast** | Works | WiFi Display enabled, P2P discovery functional. Successfully found LG TV on network. |
-| **Analog Video Decoder** | Registered as camera | RN6752M decodes CVBS/AHD to 1080p MIPI CSI-2. HDMI input may route through inline converter -- needs physical test. |
-| **LTE Modem** | Silicon present | MT8788 baseband active, 21 ccmni interfaces, MOLY firmware running. No SIM slot or antenna populated. |
-| **NFC** | Not present | Software stack exists but chip not populated on PCB. Hardware modification required. |
-| **Lua 5.3 VM** | Fully functional | EdgeTX-derived with LVGL widgets, touch events, serial I/O, shared memory IPC. Custom AX12 extensions (getShmVar/setShmVar). |
-| **Factory Root** | Confirmed | Ships with SUID su binary, userdebug build, SELinux permissive. No exploit needed. |
-
-These findings apply to firmware K908-V2.0-XY8788WA. Other firmware versions may differ.
-
-
 ## Overview
 
 The RadioMaster AX12 is an RC transmitter built on a MediaTek MT8788 SoC running Android 9. Unlike traditional radios with dedicated firmware, the AX12 runs a full Android OS with a Qt6/QML application ("Flyshark") that communicates with an AT32 microcontroller over a proprietary serial protocol we call **UMBUS**.
