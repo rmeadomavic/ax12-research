@@ -14,6 +14,7 @@ Usage:
     # From live strace (pipe):
     su 0 strace -tt -e trace=read,write -e read=FD -e write=FD -p PID 2>&1 | python strace-parser.py -
 """
+import argparse
 import json
 import sys
 import os
@@ -168,26 +169,22 @@ def export_json(frames, total_bytes: int) -> str:
 
 
 def main():
-    args = sys.argv[1:]
-    json_mode = '--json' in args
-    if json_mode:
-        args.remove('--json')
+    parser = argparse.ArgumentParser(
+        description='Parse UMBUS frames from strace output.',
+        epilog='Example: su 0 strace ... 2>&1 | python strace-parser.py --json -',
+    )
+    parser.add_argument('file', help='strace output file, or - for stdin')
+    parser.add_argument('--json', action='store_true', dest='json_mode',
+                        help='export decoded frames as JSON (captures/frames.json format)')
+    args = parser.parse_args()
 
-    if not args:
-        print("Usage: python strace-parser.py [--json] <strace-output.txt>")
-        print("       su 0 strace ... 2>&1 | python strace-parser.py [--json] -")
-        print()
-        print("Options:")
-        print("  --json    Export decoded frames as JSON (captures/frames.json format)")
-        sys.exit(1)
-
-    if args[0] == '-':
+    if args.file == '-':
         text = sys.stdin.read()
     else:
-        with open(args[0], 'r') as f:
+        with open(args.file, 'r') as f:
             text = f.read()
 
-    if json_mode:
+    if args.json_mode:
         decoder, frames = decode_frames_from_text(text)
         total_bytes = sum(len(f.raw) for f in frames)
         print(export_json(frames, total_bytes))
