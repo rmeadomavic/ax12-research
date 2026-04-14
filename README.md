@@ -44,7 +44,7 @@ Hardware capabilities found through reverse engineering that are not documented 
 | **FM Radio** | Chip responds, antenna TBD | MT6631 FM tuner (87.5-108 MHz). Full ioctl control working. Headphone antenna path may not be wired on AX12 PCB -- needs hardware investigation. |
 | **USB HID Gamepad** | Ready to deploy | Kernel has CONFIG_USB_F_HID=y. ConfigFS hid.gs0 function pre-created at boot. Init RC has property trigger. |
 | **AI Accelerator** | Hardware confirmed | MediaTek VPU/APU with NNAPI HAL service running and 33MB ION memory allocated. |
-| **9-DOF IMU** | Hardware confirmed | ICM-42607: 400Hz gyro, 125Hz accel, 50Hz magnetometer. Accessible via Android SensorManager. |
+| **9-DOF IMU** | Hardware present, driver broken | ICM-42607: 400Hz gyro, 125Hz accel, 50Hz magnetometer. Sensor HAL expects missing device nodes. Firmware fix needed from RadioMaster. |
 | **HDMI Output** | Hardware confirmed | ITE IT66121 HDMI 1.4 transmitter on I2C. Driver loaded, currently disabled in software. |
 | **Miracast** | Works | WiFi Display enabled, P2P discovery functional. Successfully found LG TV on network. |
 | **Analog Video Decoder** | Registered as camera | RN6752M decodes CVBS/AHD to 1080p MIPI CSI-2. HDMI input may route through inline converter -- needs physical test. |
@@ -67,7 +67,7 @@ Hardware capabilities found through reverse engineering that are not documented 
 | **FM Radio** | Chip responds, antenna TBD | MT6631 FM tuner (87.5-108 MHz). Full ioctl control working. Headphone antenna path may not be wired on AX12 PCB -- needs hardware investigation. |
 | **USB HID Gamepad** | Ready to deploy | Kernel has CONFIG_USB_F_HID=y. ConfigFS hid.gs0 function pre-created at boot. Init RC has property trigger. |
 | **AI Accelerator** | Hardware confirmed | MediaTek VPU/APU with NNAPI HAL service running and 33MB ION memory allocated. |
-| **9-DOF IMU** | Hardware confirmed | ICM-42607: 400Hz gyro, 125Hz accel, 50Hz magnetometer. Accessible via Android SensorManager. |
+| **9-DOF IMU** | Hardware present, driver broken | ICM-42607: 400Hz gyro, 125Hz accel, 50Hz magnetometer. Sensor HAL expects missing device nodes. Firmware fix needed from RadioMaster. |
 | **HDMI Output** | Hardware confirmed | ITE IT66121 HDMI 1.4 transmitter on I2C. Driver loaded, currently disabled in software. |
 | **Miracast** | Works | WiFi Display enabled, P2P discovery functional. Successfully found LG TV on network. |
 | **Analog Video Decoder** | Registered as camera | RN6752M decodes CVBS/AHD to 1080p MIPI CSI-2. HDMI input may route through inline converter -- needs physical test. |
