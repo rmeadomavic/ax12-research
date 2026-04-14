@@ -6,54 +6,30 @@ Community-built technical reference for the RadioMaster AX12, an Android-based R
 ![Python 3.13](https://img.shields.io/badge/python-3.13-yellow.svg)
 ![Platform: Android 9](https://img.shields.io/badge/platform-Android%209-green.svg)
 
-## What You Didn't Know Your AX12 Could Do
+## Hardware Discoveries
 
-RadioMaster put a phone-grade SoC into a transmitter and barely scratched the surface. Here is what is hiding inside.
+Capabilities found through reverse engineering that are not documented by RadioMaster or mentioned in any review.
 
-**Your transmitter has GPS.** The MT6631 combo chip includes a multi-constellation GNSS receiver (GPS + GLONASS + BeiDou, 19 satellites observed). No review has ever mentioned this. Your drone controller knows where you are.
-
-**It can be a USB gamepad.** The kernel has USB HID compiled in. Plug the AX12 into any PC and it shows up as a native gamepad -- 4 axes, 12 buttons, zero drivers. Use your actual gimbals in Velocidrone, Liftoff, or DRL Sim.
-
-**It runs DOOM.** Chocolate Doom on the touchscreen, controlled by your gimbals. Right stick moves, left stick strafes, SA fires.
-
-**It has an FM radio.** The MT6631 includes an FM receiver (87.5-108 MHz). Tune stations, scan the band, check signal strength -- all from Python.
-
-**It streams to ATAK.** The CoT bridge reads GPS position and sends Cursor-on-Target XML over UDP. Your transmitter becomes a node on the TAK map.
-
-**It has a 9-axis IMU.** ICM-42607 with 400Hz gyro, 125Hz accel, 50Hz magnetometer. Head tracking, motion sensing, attitude reference.
-
-**It has an AI accelerator.** MediaTek VPU/APU with NNAPI. On-device neural network inference.
-
-**It has HDMI output.** ITE IT66121 transmitter mirrors the screen to any display.
-
-**It runs Meshtastic.** Install the app, pair a node, join the mesh network. Combined with CoT, pilot position goes over LoRa to the whole team.
-
-**33 Lua scripts ready to run.** CCIP targeting reticle, TAK-style HUD, compass, race timer, mission timer, MGRS converter, pre-flight checklist, VTx channel manager, FPV simulator, and more.
-
-**Full UMBUS protocol decoded.** 8 frame types, CRC-8/MAXIM checksums with per-type init values, 33 channels mapped. This is the foundation everything builds on.
-
-All tools are Python stdlib only. All Lua scripts follow EdgeTX conventions. Everything runs on-device.
-
-## New Discoveries
-
-Hardware capabilities found through reverse engineering that are not documented by RadioMaster or mentioned in any review.
+**Verification key:** Confirmed = tested on device with observed results. Detected = hardware/driver present, not functionally tested. Theoretical = code analysis only, needs physical testing.
 
 | Discovery | Status | Details |
 |-----------|--------|---------|
-| **GPS Receiver** | Confirmed working | MT6631 GNSS: GPS + GLONASS + BeiDou, 19 satellites. Uses shared PCB antenna via MT6631 combo chip (WiFi/BT/GPS/FM). Confirmed receiving satellites indoors near window. |
-| **FM Radio** | Chip responds, antenna TBD | MT6631 FM tuner (87.5-108 MHz). Full ioctl control working. Headphone antenna path may not be wired on AX12 PCB -- needs hardware investigation. |
-| **USB HID Gamepad** | Ready to deploy | Kernel has CONFIG_USB_F_HID=y. ConfigFS hid.gs0 function pre-created at boot. Init RC has property trigger. |
-| **AI Accelerator** | Hardware confirmed | MediaTek VPU/APU with NNAPI HAL service running and 33MB ION memory allocated. |
-| **9-DOF IMU** | Hardware present, driver broken | ICM-42607: 400Hz gyro, 125Hz accel, 50Hz magnetometer. Sensor HAL expects missing device nodes. Firmware fix needed from RadioMaster. |
-| **HDMI Output** | Hardware confirmed | ITE IT66121 HDMI 1.4 transmitter on I2C. Driver loaded, currently disabled in software. |
-| **Miracast** | Works | WiFi Display enabled, P2P discovery functional. Successfully found LG TV on network. |
-| **Analog Video Decoder** | Registered as camera | RN6752M decodes CVBS/AHD to 1080p MIPI CSI-2. HDMI input may route through inline converter -- needs physical test. |
-| **LTE Modem** | Silicon present | MT8788 baseband active, 21 ccmni interfaces, MOLY firmware running. No SIM slot or antenna populated. |
-| **NFC** | Not present | Software stack exists but chip not populated on PCB. Hardware modification required. |
-| **Lua 5.3 VM** | Fully functional | EdgeTX-derived with LVGL widgets, touch events, serial I/O, shared memory IPC. Custom AX12 extensions (getShmVar/setShmVar). |
 | **Factory Root** | Confirmed | Ships with SUID su binary, userdebug build, SELinux permissive. No exploit needed. |
+| **GPS Receiver** | Confirmed | MT6631 GNSS: GPS + GLONASS + BeiDou, 19 satellites. Uses shared PCB antenna via MT6631 combo chip. Confirmed receiving satellites indoors near window. No UI exposes it. |
+| **FM Radio** | Detected | MT6631 FM tuner (87.5-108 MHz). Chip responds to ioctl commands. Headphone antenna path may not be wired on AX12 PCB — needs hardware investigation. |
+| **Lua 5.3 VM** | Confirmed | EdgeTX-derived with LVGL widgets, touch events, shared memory IPC. Custom AX12 extensions (getShmVar/setShmVar). Scripts run on device. |
+| **Miracast** | Confirmed | WiFi Display P2P discovery functional. Successfully found LG TV on network. |
+| **HDMI Output** | Detected | ITE IT66121 HDMI 1.4 transmitter on I2C bus 1. Driver loaded, currently disabled in software. |
+| **Analog Video Decoder** | Detected | RN6752M decodes HDMI to MIPI CSI-2, registered as camera sensor. Routed through ISP pipeline (~140ms measured latency). |
+| **9-DOF IMU** | Detected, driver broken | ICM-42607 on I2C. Sensor HAL expects device nodes that don't exist in current firmware. Needs fix from RadioMaster. |
+| **AI Accelerator** | Detected | MediaTek VPU/APU with NNAPI HAL service running. No inference testing done. |
+| **USB HID Gamepad** | Theoretical | Kernel has CONFIG_USB_F_HID=y, ConfigFS function pre-created. Tool written but never tested with a physical USB connection to a PC. |
+| **USB OTG Host** | Theoretical | Sysfs controls respond. No physical test with USB-C OTG adapter and connected device. |
+| **LTE Modem** | Detected, not usable | MT8788 baseband active, MOLY firmware running, 21 ccmni interfaces. No SIM slot or antenna populated on PCB. |
+| **NFC** | Not present | Software stack exists but chip not populated. Hardware modification required. |
 
 These findings apply to firmware K908-V2.0-XY8788WA. Other firmware versions may differ.
+
 ## Overview
 
 The RadioMaster AX12 is an RC transmitter built on a MediaTek MT8788 SoC running Android 9. Unlike traditional radios with dedicated firmware, the AX12 runs a full Android OS with a Qt6/QML application ("Flyshark") that communicates with an AT32 microcontroller over a proprietary serial protocol we call **UMBUS**.
@@ -130,28 +106,60 @@ Follow the [Capture Session Guide](docs/guides/capture-session-guide.md) to reco
 
 All Python tools are Python 3.13, stdlib only — no external dependencies.
 
+### Protocol analysis
+
 | Tool | Description |
 |------|-------------|
 | [`umbus.py`](tools/umbus.py) | UMBUS protocol library — parse, encode, validate, and analyze frames |
-| [`monitor.py`](tools/monitor.py) | Live channel visualization with color-coded delta tracking |
 | [`strace-parser.py`](tools/strace-parser.py) | Extract and decode UMBUS frames from strace output |
-| [`calibrator.py`](tools/calibrator.py) | 3-phase control surface calibration and axis mapping |
+| [`monitor.py`](tools/monitor.py) | Live channel visualization with color-coded delta tracking |
+| [`simulator.py`](tools/simulator.py) | Synthetic UMBUS traffic generator for offline testing |
+| [`elrs_decoder.py`](tools/elrs_decoder.py) | ELRS telemetry frame decoder |
+
+### Capture and mapping
+
+| Tool | Description |
+|------|-------------|
 | [`capture-session.py`](tools/capture-session.py) | Structured control input recording with operator guidance |
 | [`batch-capture.py`](tools/batch-capture.py) | Non-interactive batch capture — timed prompts, no keyboard input |
+| [`calibrator.py`](tools/calibrator.py) | 3-phase control surface calibration and axis mapping |
 | [`live-mapper.py`](tools/live-mapper.py) | Interactive real-time control-to-channel mapping |
+| [`model_tool.py`](tools/model_tool.py) | Model file (.rcm) listing, backup, and inspection |
+| [`model_diff.py`](tools/model_diff.py) | Model file hex diff and binary analysis |
+
+### Dashboard and visualization
+
+| Tool | Description |
+|------|-------------|
 | [`live_dashboard.py`](tools/live_dashboard.py) | Web-based real-time UMBUS dashboard via SSE |
-| [`simulator.py`](tools/simulator.py) | Synthetic UMBUS traffic generator for offline testing |
 | [`umbus_server.py`](tools/umbus_server.py) | SSE broadcast server for UMBUS frames |
 | [`build-dashboard.py`](tools/build-dashboard.py) | Generate self-contained HTML protocol dashboard |
-| [`cot_bridge.py`](tools/cot_bridge.py) | MAVLink-to-CoT bridge for ATAK integration |
-| [`test_cot.py`](tools/test_cot.py) | CoT test sender — verify ATAK connectivity |
+
+### Device and hardware
+
+| Tool | Description |
+|------|-------------|
 | [`fm_radio.py`](tools/fm_radio.py) | FM radio controller via MT6631 ioctl interface |
+| [`gps_tool.py`](tools/gps_tool.py) | GPS position reader via Android location services |
 | [`usb_otg.py`](tools/usb_otg.py) | USB OTG host/device mode switcher via sysfs |
 | [`optimize.py`](tools/optimize.py) | Safe performance optimizer — bloatware, governor, camera tuning |
 | [`latency-test.py`](tools/latency-test.py) | HDMI pipeline latency measurement via frame timestamp comparison |
+| [`device_health.py`](tools/device_health.py) | Diagnostic check across device subsystems |
+| [`system_test.py`](tools/system_test.py) | Automated pre-demo verification suite |
 | [`firewall.sh`](tools/firewall.sh) | iptables firewall rules — block telemetry, restrict inbound |
 
+### Experimental (need physical verification)
+
+| Tool | Description |
+|------|-------------|
+| [`usb_gamepad.py`](tools/usb_gamepad.py) | USB HID gamepad via ConfigFS — untested with physical USB connection |
+| [`cot_bridge.py`](tools/cot_bridge.py) | MAVLink-to-CoT bridge for ATAK — not tested end-to-end |
+| [`mavlink_bridge.py`](tools/mavlink_bridge.py) | MAVLink WiFi bridge for QGC/Mission Planner |
+| [`imu_tracker.py`](tools/imu_tracker.py) | IMU reader — blocked by broken sensor HAL in current firmware |
+
 ## Key Findings
+
+### Protocol (confirmed from strace captures)
 
 **UMBUS Protocol Decoded.** Eight frame types identified, timed, and field-mapped. The MCU sends channel data at 25 Hz, heartbeats at 4 Hz, ELRS telemetry at 5 Hz, and extended status at ~3 Hz. The app responds with polling, heartbeat acks, and config at 0.5-2 Hz. Total bandwidth: ~2.4 KB/s on a 921.6 kbps link (~2% utilization). Full spec: [UMBUS Protocol](docs/protocol/umbus-protocol.md).
 
@@ -159,32 +167,37 @@ All Python tools are Python 3.13, stdlib only — no external dependencies.
 
 **33 Output Channels.** The system supports 33 channels (CH00-CH32) with per-channel reverse, slow motion, min/max limits, curves, dual rates, and multi-source mixing. Every gimbal axis, switch, pot, and the 6-position selector have been mapped to their UMBUS byte offsets.
 
-**Model Configuration Format.** Model configs are stored as flat binary `.rcm` files with Unix timestamp filenames. The native library exposes `loadModelCfgFile()`, `QML_Pack_RcModelData`, and `QML_Pack_RcModelCfgData` for serialization. Details: [Hardware Map](docs/hardware/hardware-map.md).
+**MCU Operates Autonomously.** The AT32 MCU broadcasts all four frame types at their documented rates even when the Flyshark app is not running. No app handshake is required. Confirmed with a standalone capture (captures/umbus-mcu-standalone.bin).
 
-**Lua VM with LVGL.** The AX12 embeds Lua 5.3 with a NodeMCU-lineage ROM table patch and three custom C modules: `bitmap` (LCD rendering), `etxdir` (filesystem), and `lvgl` (full LVGL UI framework). Scripts follow EdgeTX conventions. The serial bridge `luaSetGetSerialByte()` exists but is a dead stub on AX12. Reference: [Lua API](docs/software/lua-api.md).
-
-**FM Radio.** The MT6631 combo chip includes a fully functional FM radio tuner (87.5-108 MHz) accessible via `/dev/fm` ioctls. Uses the headphone cable as antenna. Tool: [`fm_radio.py`](tools/fm_radio.py).
+### Hardware (confirmed on device)
 
 **AT32F435 MCU Identified.** The RC microcontroller is an Artery AT32F435 (Cortex-M4F, 288 MHz) — pin-compatible with the STM32F405 but different silicon. It owns all physical inputs, ADC sampling, GPIO debounce, and SPI/UART to the ELRS LR1121 RF module. The Android SoC never touches hardware directly; everything is mediated through UMBUS. Details: [AT32F435 MCU](docs/hardware/at32-mcu.md).
 
-**USB OTG Host Mode via Sysfs.** The top USB-C port supports OTG host mode, toggled by writing to three MT8788 sysfs controls: host GPIO (VBUS power), MUSB cmode, and dual_role mode. This enables keyboards, GPS receivers, and flash drives without hardware modification. Tool: [`usb_otg.py`](tools/usb_otg.py), guide: [USB OTG Testing](docs/guides/usb-otg-testing.md).
-
-**ELRS Backpack WiFi MAVLink.** The AX12 includes a dedicated ELRS backpack chip (ESP8285/ESP32-C3) that can create a WiFi AP and forward MAVLink telemetry via UDP on port 14550 (v1.5.0+). Any WiFi client — QGroundControl, ATAK, Mission Planner — can receive live vehicle telemetry without serial port access or root. This is the cleanest path to AX12-as-GCS. Details: [ELRS Backpack](docs/hardware/elrs-backpack.md).
-
-**Flyshark Three-Transport Architecture.** The native library supports three communication transports — UART (primary, to MCU), TCP (network, for simulators), and USB-HID (direct PC connection) — all using UMBUS protocol. AUX and AUX2 serial modes are configurable, and the app includes a full ground control station with offline maps, terrain data, mission planning, RTSP video, and gimbal control. Analysis: [Flyshark App](docs/software/flyshark-app.md).
+**Complete I2C Device Map.** 28 devices across 7 I2C buses fully enumerated: IT66121 HDMI 1.4 transmitter (output), RT5509 Class-D speaker amp, RT9465 charger, MT6370 sub-PMIC with USB-C TCPC, ICM-42607 IMU, and 14 phantom entries from the MT8788 reference design. Details: [Hardware Map](docs/hardware/hardware-map.md).
 
 **Factory Root.** The AX12 ships with a SUID root binary at `/system/xbin/su` — no exploit required. The build is `userdebug` with `test-keys` and SELinux in permissive mode. Setup: [Root Guide](docs/guides/root-guide.md).
 
+**Model Configuration Format.** Model configs are stored as flat binary `.rcm` files with Unix timestamp filenames. Header (magic, timestamps, name), config section (trims, rates, curves), and variable-length endpoint section (mixer entries, travel limits) substantially decoded. Details: [Hardware Map](docs/hardware/hardware-map.md).
 
-**HDMI Latency Root Cause.** The RN6752M video decoder is registered as a camera sensor (imgsensor) in MediaTek's HAL, routing all HDMI input through the full ISP pipeline — 22+ tuning libraries for HDR, noise reduction, 3A, and face detection. Camera FPS is capped at 30fps on a 56.4Hz display. The display dynamically switches between DIRECT_LINK (low latency) and DECOUPLE (high latency, triple-buffered) modes based on layer count. Five CAMSV DMA engines (0x1a050000-0x1a055000) are available for ISP bypass via kernel module. Details: [Latency Optimization](docs/guides/latency-optimization.md).
+### Software (from code analysis and on-device observation)
 
-**MCU Operates Autonomously.** The AT32 MCU broadcasts all four frame types (channel data, heartbeat, ELRS telemetry, extended telemetry) at their documented rates even when the Flyshark app is not running. The MCU does not require an app handshake to start operating.
+**Lua VM with LVGL.** The AX12 embeds Lua 5.3 with a NodeMCU-lineage ROM table patch and three custom C modules: `bitmap` (LCD rendering), `etxdir` (filesystem), and `lvgl` (full LVGL UI framework). Scripts follow EdgeTX conventions. The serial bridge `luaSetGetSerialByte()` exists but is a dead stub on AX12. Reference: [Lua API](docs/software/lua-api.md).
 
-**Complete I2C Device Map.** 28 devices across 7 I2C buses fully enumerated: IT66121 HDMI 1.4 transmitter (output), RT5509 Class-D speaker amp, RT9465 charger, MT6370 sub-PMIC with USB-C TCPC, ICM-42607 IMU, and 14 phantom entries from the MT8788 reference design. Details: [Hardware Map](docs/hardware/hardware-map.md).
+**Flyshark Three-Transport Architecture.** The native library (25MB, 13,000+ symbols) supports three communication transports — UART (primary, to MCU), TCP (network, for simulators), and USB-HID (direct PC connection) — all using UMBUS protocol. The app includes a ground control station with offline maps, terrain data, mission planning, RTSP video, and gimbal control. Analysis based on strings/readelf, no decompilation. Analysis: [Flyshark App](docs/software/flyshark-app.md).
 
-**Cellular Modem Present.** The MT8788 baseband processor runs MOLY firmware (MOLY.LR12A.R2.MP.V109.4) and is configured for LTE. 21 cellular network interfaces exist but are inactive — no SIM slot or antenna is populated on the AX12 PCB.
+**ELRS Backpack.** The AX12 includes an ELRS backpack chip (ESP8285/ESP32-C3) on ttyS1 at 460800 baud. Per ExpressLRS documentation, firmware v1.5.0+ can create a WiFi AP and forward MAVLink telemetry via UDP on port 14550. Not yet tested end-to-end on AX12. Details: [ELRS Backpack](docs/hardware/elrs-backpack.md).
 
-**OpenIPC FPV Compatibility.** The PixelPilot Android app (minSdk 26) can turn the AX12 into an OpenIPC FPV ground station via USB OTG + RTL8812AU WiFi dongle (~0). A known MediaTek libusb bug (issue #6) has a fix merged in PR #97. Details: [OpenIPC FPV](docs/hardware/openipc-fpv.md).
+### HDMI pipeline (partially confirmed)
+
+**HDMI Latency Root Cause.** The RN6752M video decoder is registered as a camera sensor in MediaTek's HAL, routing HDMI input through the full ISP pipeline — 22+ tuning libraries for HDR, noise reduction, 3A, and face detection. Baseline latency measured at ~140ms. Phase 1 optimizations (disable CZ/DRE, VSync phase zeroing) saved 10-15ms. Further optimizations (Direct Link mode, CAMSV DMA bypass) are identified but untested. Details: [Latency Optimization](docs/guides/latency-optimization.md).
+
+### Untested / theoretical
+
+**USB OTG Host Mode.** Sysfs controls for host GPIO, MUSB cmode, and dual_role mode are present and respond to writes. All USB class drivers (hub, HID, mass storage, audio, ethernet) are loaded in the stock kernel. Needs physical testing with a USB-C OTG adapter to confirm device enumeration, VBUS sourcing, and data transfer. Tool: [`usb_otg.py`](tools/usb_otg.py), guide: [USB OTG Testing](docs/guides/usb-otg-testing.md).
+
+**OpenIPC FPV.** The PixelPilot Android app could theoretically turn the AX12 into an OpenIPC ground station via USB OTG + RTL8812AU dongle. Depends on USB OTG host mode working (untested). Details: [OpenIPC FPV](docs/hardware/openipc-fpv.md).
+
+**Cellular Modem.** The MT8788 baseband processor runs MOLY firmware and is configured for LTE. 21 cellular network interfaces exist but are inactive — no SIM slot or antenna is populated on the AX12 PCB. Hardware modification would be required.
 
 ## Device Specifications
 
@@ -212,7 +225,11 @@ All Python tools are Python 3.13, stdlib only — no external dependencies.
 
 ## Project Status
 
-The idle protocol is fully decoded — all 8 frame types, timing, checksums, and channel mappings are documented. Major remaining work: non-idle captures (binding, flying, trainer mode), App-to-MCU command protocol, and ELRS telemetry field identification. See [ROADMAP.md](ROADMAP.md) for the full list.
+**What's solid:** The idle-state UMBUS protocol is fully decoded — all 8 frame types, timing, CRC checksums, and 33 channel mappings are documented and validated from real captures. Hardware has been enumerated via device tree, I2C scans, and sysfs. The native library has been analyzed via strings/readelf (no decompilation). 33 Lua scripts and 40+ Python tools have been written.
+
+**What's next:** Non-idle captures (binding, flying, trainer mode), App-to-MCU command protocol semantics, ELRS telemetry field mapping, and physical testing of USB OTG host mode. See [ROADMAP.md](ROADMAP.md) for the full list.
+
+**What needs verification:** Several tools and integrations have been written but not tested end-to-end on the physical device. These are marked as "Experimental" in the tools table and "Theoretical" in the discoveries table above.
 
 ## Methodology
 
