@@ -385,7 +385,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'text/event-stream')
             self.send_header('Cache-Control', 'no-cache')
             self.end_headers()
-            q = queue.Queue(maxsize=60)
+            q = queue.Queue(maxsize=4)
             with sse_lock:
                 sse_queues.append(q)
             try:

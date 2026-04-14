@@ -34,7 +34,7 @@ def main():
             try:
                 data = os.read(fd, 4096)
             except BlockingIOError:
-                time.sleep(0.005)
+                time.sleep(0.001)
                 continue
 
             latest_frame = None
@@ -91,7 +91,7 @@ def main():
 
             sys.stdout.write(out)
             sys.stdout.flush()
-            time.sleep(0.03)
+            time.sleep(0.005)
 
     except KeyboardInterrupt:
         pass

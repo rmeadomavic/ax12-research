@@ -6,8 +6,9 @@ Opens in Chrome on the AX12 and shows gimbal positions, channel bars,
 switch states, and frame stats via Server-Sent Events.
 
 Usage:
-    su 0 python3 tools/live_dashboard.py          # live from ttyS0
-    su 0 python3 tools/live_dashboard.py --demo    # replay capture
+    su 0 python3 tools/live_dashboard.py                    # live from ttyS0
+    su 0 python3 tools/live_dashboard.py --demo             # replay capture
+    su 0 python3 tools/live_dashboard.py --low-latency      # full 25Hz, no transitions
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -139,6 +140,11 @@ body {
   font-variant-numeric: tabular-nums; color: var(--text);
 }
 
+/* Low-latency mode: disable CSS transitions for instant updates */
+body.low-latency .stick-dot,
+body.low-latency .gbar-fill,
+body.low-latency .ch-bar { transition: none; }
+
 /* Switches */
 .switches-panel {
   background: var(--panel); border: 1px solid var(--border);
@@ -183,6 +189,7 @@ body {
   <span>Frames: <span class="val" id="s-frames">0</span></span>
   <span>FPS: <span class="val" id="s-fps">0</span></span>
   <span>CH: <span class="val" id="s-channels">0</span></span>
+  <span>Lat: <span class="val" id="s-latency">--</span>ms</span>
 </div>
 
 <!-- Gimbals -->
@@ -297,6 +304,7 @@ const $srVal = document.getElementById('sr-val');
 const $frames = document.getElementById('s-frames');
 const $fps = document.getElementById('s-fps');
 const $nch = document.getElementById('s-channels');
+const $latency = document.getElementById('s-latency');
 const $dot = document.getElementById('status-dot');
 const $statusText = document.getElementById('status-text');
 const $badge = document.getElementById('mode-badge');
@@ -331,6 +339,11 @@ es.addEventListener('frame', function(e) {
   $frames.textContent = d.n;
   $fps.textContent = Math.round(d.fps);
   $nch.textContent = ch.length;
+  // Pipeline latency (valid when server and browser share the same clock)
+  if (d.t) {
+    const latMs = Math.round((Date.now() / 1000 - d.t) * 1000);
+    $latency.textContent = latMs > 0 ? latMs : '<1';
+  }
 
   // Stick positions — gimbal indices are interleaved, not contiguous per stick
   // Left stick: g[0]=X(Yaw), g[2]=Y(Throttle)  Right stick: g[3]=X(Roll), g[1]=Y(Pitch)
@@ -401,6 +414,16 @@ es.addEventListener('status', function(e) {
   }
 });
 
+es.addEventListener('config', function(e) {
+  const d = JSON.parse(e.data);
+  if (d.low_latency) {
+    document.body.classList.add('low-latency');
+    addLog('Low-latency mode: transitions disabled, full frame rate');
+  } else {
+    document.body.classList.remove('low-latency');
+  }
+});
+
 es.addEventListener('log', function(e) {
   const d = JSON.parse(e.data);
   addLog(d.msg);
@@ -421,6 +444,7 @@ es.onopen = function() {
 
 if __name__ == '__main__':
     demo = '--demo' in sys.argv
-    svc = UMBUSService(demo=demo)
+    low_latency = '--low-latency' in sys.argv
+    svc = UMBUSService(demo=demo, low_latency=low_latency)
     svc.set_html(DASHBOARD_HTML)
     svc.run()

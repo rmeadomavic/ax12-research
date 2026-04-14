@@ -9,10 +9,11 @@ this module and extend it with their own routes and logic.
 Usage as standalone (live monitor):
     su 0 python3 tools/umbus_server.py
     su 0 python3 tools/umbus_server.py --demo
+    su 0 python3 tools/umbus_server.py --low-latency
 
 Usage as library:
     from umbus_server import UMBUSService
-    svc = UMBUSService(port=8081)
+    svc = UMBUSService(port=8081, low_latency=True)
     svc.add_route('POST', '/api/my-action', my_handler)
     svc.set_html(my_html_string)
     svc.run()
@@ -30,14 +31,16 @@ from umbus import UMBUSDecoder, FrameType
 SERIAL_PORT = '/dev/ttyS0'
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                            'docs', 'control-map.json')
+SSE_QUEUE_DEPTH = 4  # small queue bounds staleness; put_nowait drops frames for slow consumers
 
 
 class UMBUSService:
     """Core service: serial reader, SSE broadcaster, HTTP server, config store."""
 
-    def __init__(self, port=8081, demo=False):
+    def __init__(self, port=8081, demo=False, low_latency=False):
         self.port = port
         self.demo = demo
+        self.low_latency = low_latency
         self.sse_queues = []
         self.sse_lock = threading.Lock()
         self.custom_routes = {}  # {('METHOD', '/path'): handler_fn}
@@ -104,8 +107,10 @@ class UMBUSService:
         ftimes = deque(maxlen=100)
         self.state['connected'] = True
         self.broadcast('status', {'connected': True})
+        self.broadcast('config', {'low_latency': self.low_latency})
         self.broadcast_log(f'Connected to {SERIAL_PORT}')
         skip = 0
+        throttle_n = 1 if self.low_latency else 2
 
         try:
             while self.running:
@@ -129,17 +134,18 @@ class UMBUSService:
                         for cb in self.frame_callbacks:
                             cb(frame.frame_type, self.state['gimbals'], self.state['channels'])
 
-                        # Throttle SSE to ~12Hz
+                        # Throttle SSE: ~12Hz default, full 25Hz in low-latency mode
                         skip += 1
-                        if skip % 2 == 0:
+                        if skip % throttle_n == 0:
                             self.broadcast('frame', {
                                 'g': self.state['gimbals'],
                                 'ch': self.state['channels'],
                                 'n': self.state['frame_count'],
                                 'fps': self.state['fps'],
+                                't': now,
                             })
                 except BlockingIOError:
-                    time.sleep(0.005)
+                    time.sleep(0.001 if self.low_latency else 0.005)
         except Exception as e:
             self.state['connected'] = False
             self.broadcast_log(f'Serial error: {e}')
@@ -154,6 +160,7 @@ class UMBUSService:
         self.state['connected'] = True
         self.state['demo'] = True
         self.broadcast('status', {'connected': True, 'demo': True})
+        self.broadcast('config', {'low_latency': self.low_latency})
         self.broadcast_log('Demo mode — replaying capture data')
 
         while self.running:
@@ -175,6 +182,7 @@ class UMBUSService:
                         'ch': self.state['channels'],
                         'n': self.state['frame_count'],
                         'fps': self.state['fps'],
+                        't': time.time(),
                     })
                     for cb in self.frame_callbacks:
                         cb(frame.frame_type, self.state['gimbals'], self.state['channels'])
@@ -204,7 +212,7 @@ class UMBUSService:
                     self.send_header('Content-Type', 'text/event-stream')
                     self.send_header('Cache-Control', 'no-cache')
                     self.end_headers()
-                    q = queue.Queue(maxsize=60)
+                    q = queue.Queue(maxsize=SSE_QUEUE_DEPTH)
                     with svc_self.sse_lock:
                         svc_self.sse_queues.append(q)
                     try:
@@ -288,7 +296,8 @@ class UMBUSService:
 # --- Standalone mode: basic live monitor ---
 if __name__ == '__main__':
     demo = '--demo' in sys.argv
-    svc = UMBUSService(demo=demo)
+    low_latency = '--low-latency' in sys.argv
+    svc = UMBUSService(demo=demo, low_latency=low_latency)
     svc.set_html("""<!DOCTYPE html><html><head><title>UMBUS Monitor</title>
 <style>body{background:#0a0a0f;color:#c8ccd8;font-family:monospace;padding:20px}
 pre{font-size:14px;line-height:1.6}</style></head><body>
