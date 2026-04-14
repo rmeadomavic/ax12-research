@@ -64,18 +64,34 @@ _lock = threading.Lock()
 # State accessors
 # ---------------------------------------------------------------------------
 
-def update_latest(gimbals: list[int], channels: list[int]) -> None:
-    """Thread-safe update of LATEST with new frame data."""
-    with _lock:
-        LATEST["gimbals"] = list(gimbals)
-        LATEST["channels"] = list(channels)
-        LATEST["connected"] = True
-
-
 def get_latest() -> dict:
     """Return a thread-safe shallow copy of LATEST."""
     with _lock:
         return dict(LATEST)
+
+
+# ---------------------------------------------------------------------------
+# Spike rejection filter
+# ---------------------------------------------------------------------------
+
+_SPIKE_THRESHOLD = 1000
+_prev_gimbals = [0, 0, 0, 0]
+_prev_valid = False
+
+
+def update_latest(gimbals, channels):
+    """Thread-safe update of LATEST with spike rejection filter."""
+    global _prev_gimbals, _prev_valid
+    if _prev_valid:
+        for i in range(min(len(gimbals), len(_prev_gimbals))):
+            if abs(gimbals[i] - _prev_gimbals[i]) > _SPIKE_THRESHOLD:
+                return
+    _prev_gimbals = list(gimbals)
+    _prev_valid = True
+    with _lock:
+        LATEST["gimbals"] = list(gimbals)
+        LATEST["channels"] = list(channels)
+        LATEST["connected"] = True
 
 
 # ---------------------------------------------------------------------------
