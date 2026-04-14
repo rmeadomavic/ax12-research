@@ -43,7 +43,7 @@
 │  Other:                                                             │
 │  - ITE IT66121 HDMI bridge (video out)                              │
 │  - Richnano RN6752M analog video decoder (HDMI in → MIPI CSI-2)    │
-│  - Mali Bifrost GPU                                                 │
+│  - Mali-G72 MP3 GPU @ 700 MHz (Bifrost)                              │
 │  - WiFi/BT/GPS/FM via MT6631 combo chip                             │
 │  - 5.5" 1280x720 MIPI DSI touchscreen                              │
 │  - 24 thermal zones                                                 │
@@ -129,20 +129,26 @@ Embedded Lua 5.3 VM with ROM table support (NodeMCU lineage patch). Full details
 
 | Property | Value |
 |----------|-------|
-| SoC | MediaTek MT8788 (device tree: mt6771, Helio P60 family) |
-| CPU | 4x Cortex-A53 + 4x Cortex-A73 |
-| GPU | Mali Bifrost |
+| SoC | MediaTek MT8788 (device tree: mt6771, Helio P60 family), TSMC 12nm FinFET |
+| CPU | 4x Cortex-A73 @ 2.0 GHz (big) + 4x Cortex-A53 @ 2.0 GHz (LITTLE), big.LITTLE DynamIQ |
+| GPU | Mali-G72 MP3 (Bifrost architecture), 700 MHz |
 | Kernel | Linux 4.4.146 |
-| Android | 9 (Pie), build: userdebug, test-keys |
+| Android | 9 (Pie), build: userdebug, test-keys. **Cannot be updated** (per RadioMaster) |
 | Build date | 2026-01-07 |
 | SELinux | Permissive |
 | Security Patch | 2019-12-05 |
 | Boot state | Green (verified boot, dm-verity enforcing) |
+| Boot time | ~40 seconds (Android cold boot) |
 | Root | Factory su at `/system/xbin/su` (SUID) |
-| Display | 5.5" 1280x720 MIPI DSI, cap touch |
+| Display | 5.5" 1280x720 IPS MIPI DSI touchscreen, 1000 nits max brightness |
 | Storage | 64GB eMMC, 38 partitions |
 | RAM | 4GB (3.7GB usable), 1GB ZRAM swap |
-| Battery | 10,000mAh (fuel gauge reports 2946mAh, discrepancy under investigation) |
+| Battery | Dual 3.7V 21700 Li-ion cells, 10,000mAh total (fuel gauge reports 2946mAh — see [Power](#power)) |
+| Weight | 640g (RadioMaster claimed) / 649g (measured by Oscar Liang) |
+| Dimensions | 171 × 168 × 73 mm |
+| Price | $249.99 USD (MSRP at launch) |
+| FCC ID | 2BLHG-AX12 |
+| Working current | 1.10 A (at maximum RF output power) |
 
 ## Physical Controls
 
@@ -240,7 +246,7 @@ Peripherals confirmed via /sys, /dev, and device-tree probing (2026-04-13):
 | Mini HDMI In | Top edge | FPV video feed (DJI/Walksnail/HDZero/OpenIPC). Internally: HDMI→analog→RN6752M→MIPI CSI-2 |
 | Mini HDMI Out | Top edge | Mirror display to external monitor |
 | USB-C (data) | Top edge | Trainer port, ADB, data transfer. Default: gadget mode (ADB/MTP/RNDIS). **USB OTG host mode: hardware supported, software-switchable via sysfs (no custom kernel needed).** See [USB OTG Host Mode](#usb-otg-host-mode) below. |
-| USB-C (charge) | Bottom edge | USB PD charging |
+| USB-C (charge) | Bottom edge | USB PD charging only — **no data lines** (per QSG diagram) |
 | 3.5mm audio | Bottom edge | Headphone jack |
 | Nano module bay | Top edge | External RF module (ELRS, etc.) |
 
@@ -308,7 +314,7 @@ The HDMI input does **not** use a Loitium HDMI-to-MIPI bridge as previously docu
 | Sensor ID | 0x501 |
 | I2C | Bus 2, addr 0x36 |
 | MIPI | 4-lane CSI-2 |
-| Resolution | Up to 1080p |
+| Resolution | Up to 1080p, 720p/1080p @ up to 60 Hz |
 | MCLK | 26 MHz |
 | Input formats | AHD, TVI, CVI, CVBS |
 
@@ -327,10 +333,13 @@ The AX12 supports MAVLink pass-through over ELRS, allowing QGroundControl teleme
 
 ## Power
 
-- Dual 21700 cells, 10,000 mAh total capacity
-- USB-C PD charging port (bottom edge)
-- Battery fuel gauge reports 2946mAh (discrepancy under investigation)
-- RT9465 charger IC on I2C
+- Dual 3.7V 21700 Li-ion cells, 10,000 mAh total capacity, non-removable (max charging voltage 4.2V per cell)
+- USB-C PD charging port (bottom edge, **charge only — no data lines**), up to 20W measured (QSG says max 30W)
+- 0% to 80% in ~70 minutes (measured by Oscar Liang)
+- Claimed runtime: 8+ hours (RadioMaster), ~6 hours (unmanned.tech)
+- Battery fuel gauge reports 2946mAh (discrepancy under investigation — likely per-cell capacity, 2×2946 ≈ 5900mAh, still short of 10,000mAh claim)
+- RT9465 secondary charger IC on I2C bus 6
+- MT6370 sub-PMIC handles USB-C PD negotiation (TCPC at I2C bus 5, addr 0x4E)
 
 ## Serial Port Details
 
@@ -608,10 +617,34 @@ This is NOT practical without significant PCB modification and is listed for com
 
 | Spec | Value | Source |
 |------|-------|--------|
+| Weight | 640g claimed / 649g measured | Oscar Liang review |
 | Weight | ~650g | unmanned.tech review |
-| Screen brightness | 1000 nit (outdoor-readable) | unmanned.tech review |
-| Max TX power | 250 mW (dynamic power) | unmanned.tech review |
-| Battery runtime | ~6 hours | unmanned.tech review |
-| Gimbal compatibility | AGO1 replacements | unmanned.tech review |
-| RF chip | Semtech LR1121 (2.4 GHz or 900 MHz) | confirmed |
+| Dimensions | 171 × 168 × 73 mm | Oscar Liang review (matches RadioMaster spec) |
+| Screen brightness | 1000 nits (outdoor-readable) | Oscar Liang review, unmanned.tech review |
+| Max TX power | 250 mW / 24 dBm (dynamic power) | QSG specs, Oscar Liang review, unmanned.tech review |
+| Antenna gain | 2 dBi | QSG specs |
+| RF frequency | 2.400–2.480 GHz (2.4 GHz version) | QSG specs |
+| RF bands | 2.4 GHz **or** 868/915 MHz — not simultaneous, **no Dual-band Gemini-X** | Oscar Liang review |
+| RF chip | Semtech LR1121 (2.4 GHz or sub-G 900 MHz) | confirmed |
+| RF channels | Max 16 (depending on receiver) | QSG specs, RadioMaster product page |
+| Working current | 1.10 A (at maximum output power) | RadioMaster product page |
+| Nano module bay | Top edge, for external ELRS or other nano RF modules | Oscar Liang review |
+| Battery | Dual 3.7V 21700 Li-ion, 10,000 mAh total, non-removable | Oscar Liang review |
+| Battery runtime | 8+ hours (RadioMaster claim) | Oscar Liang review |
+| Battery runtime | ~6 hours (real-world) | unmanned.tech review |
+| Charging | USB PD up to 20W, 0-80% in ~70 min | Oscar Liang review |
+| Boot time | ~40 seconds (cold boot) | Oscar Liang review |
+| Android | 9.0 — **cannot be updated** (per RadioMaster) | Oscar Liang review |
+| Gimbals | Mini Hall X5, removable/storable, stick height not adjustable | Oscar Liang review |
+| Gimbal upgrade | AG01 Nano CNC aluminum gimbals | Oscar Liang review, unmanned.tech review |
+| Connectivity | WiFi, Bluetooth — **no SIM, no GPS antenna, no camera** | Oscar Liang review |
+| IMU / Accelerometer | Oscar Liang states "no accelerometer" — **incorrect**: ICM-42607 6-axis IMU confirmed present and active on I2C bus 1 (see [Onboard Sensors](#onboard-sensors)) | Oscar Liang review vs. device audit |
+| HDMI input | Mini HDMI, 720p/1080p up to 60 Hz. Compatible: Walksnail, HDZero, OpenIPC, DJI (with additional hardware). ~140ms added latency. | Oscar Liang review |
+| HDMI output | Mini HDMI, mirrors Android display to external monitor | Oscar Liang review |
 | HDMI jitter | Reported with RunCam OpenIPC sources | unmanned.tech review |
+| DJI Fly app | Works via USB-C for DJI Goggles 2/3 video output. Requires USB debugging enabled, USB-A to USB-C cable with adapter (A-end to goggles). USB-C to USB-C OTG cables did not work. | Oscar Liang review |
+| SpeedyBee app | Works via Bluetooth (SpeedyBee Adapter 3). USB connection did not work. | Oscar Liang review |
+| Betaflight Configurator | Web version loads in Chrome but cannot detect FC via USB-C. FC receives power but is not recognized as USB device. | Oscar Liang review |
+| FPV simulators | Run on device with frame drops (GPU ~7 year old phone class). Gimbal-to-Android via Bluetooth has ~1 second latency — nearly unflyable for FPV practice. | Oscar Liang review |
+| RadioMasterOS | Android app replacing EdgeTX. Modern UI, model profiles, channel monitor, telemetry, ELRS integration, Lua scripts. First-generation, not as mature as EdgeTX. | Oscar Liang review |
+| Price | $249.99 USD | Oscar Liang review |
