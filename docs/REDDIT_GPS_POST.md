@@ -3,70 +3,65 @@
 **Subreddit:** r/Multicopter or r/fpv or r/RadioMaster
 **Title:** Your RadioMaster AX12 has a hidden GPS receiver that nobody knew about
 
+**STATUS: DRAFT — GPS antenna situation unconfirmed. See notes below.**
+
 ---
 
-I've been reverse-engineering the RadioMaster AX12 and found something that no review, teardown, or spec sheet has mentioned: **the AX12 has a working GPS receiver.**
+I've been reverse-engineering the RadioMaster AX12 and found something that no review, teardown, or spec sheet has mentioned: **the AX12 has a GNSS receiver built into the MT6631 combo chip.**
 
 ## The Discovery
 
-The MediaTek MT8788 SoC in the AX12 uses an MT6631 combo chip that handles WiFi, Bluetooth, and FM radio. What RadioMaster apparently didn't realize (or chose not to expose) is that the MT6631 also includes a full multi-constellation GNSS receiver.
+The MediaTek MT8788 SoC in the AX12 uses an MT6631 combo chip that handles WiFi, Bluetooth, and FM radio. What RadioMaster apparently didn't expose is that the MT6631 also includes a full multi-constellation GNSS receiver.
 
 ## What I Found
 
-After rooting the device and digging through the kernel, I discovered:
+After rooting the device (factory `su` — userdebug build, no exploit needed) and digging through the kernel:
 - The GPS kernel module (`gps_drv`) is **loaded and running at boot**
 - The GPS daemon (`mnld`) and assisted GPS service (`mtk_agpsd`) are **already active**
 - Device nodes `/dev/stpgps` and `/dev/gps_emi` exist
 - The MediaTek GPS test app (`com.mediatek.ygps`) is installed but hidden
+- GNSS mode 1 (GPS + GLONASS), also scans BeiDou
 
-When I started the GPS test app, the radio immediately saw **19 satellites** across GPS, GLONASS, and BeiDou constellations. WiFi-assisted positioning gave me a fix accurate to 13 meters within seconds. Full GNSS lock requires outdoor sky view but the hardware is 100% functional.
+## What Works and What Doesn't
 
-## Why This Matters
+**Works:** The GNSS software stack is fully operational. Android's WiFi-based network location provider returns coordinates (typically ~13m accuracy from WiFi AP databases). The YGPS app launches and shows satellites being scanned.
 
-Your drone transmitter now knows where **you** are. This enables:
-- **Pilot position tracking** - see yourself on a map
+**Doesn't work yet:** No actual GPS satellite fix has been achieved. AGC values read at the thermal noise floor, zero satellites acquired across hours of testing, and the GNSS RTC is stuck at 2000-01-01 (never obtained a time fix). This suggests the GNSS antenna may not be populated on the PCB, or has poor/no RF coupling. **Physical PCB inspection pending** — the board hasn't been opened yet to confirm antenna presence.
+
+## Why This Matters (If the Antenna Issue Is Solved)
+
+If an external antenna mod or antenna connection fix gets the GNSS receiver working:
+- **Pilot position tracking** — see yourself on a map
 - **Return-to-pilot** calculations
 - **Distance to drone** display from the radio itself
-- **ATAK/TAK integration** - the transmitter becomes a node on the tactical map
-- **GPS logging** - track your flying sessions geographically
-- **Multi-pilot coordination** - everyone's position on a shared map
+- **ATAK/TAK integration** — the transmitter becomes a node on the tactical map
+- **GPS logging** — track your flying sessions geographically
 
-## How to Access It
+## How to Check on Your Device
 
-You need root access (Magisk). Then:
+You need root access (factory `su 0` — no Magisk required):
 ```bash
-# Start the GPS app
-am start -n com.mediatek.ygps/.YgpsActivity
+# Start the GPS test app
+su 0 am start -n com.mediatek.ygps/.YgpsActivity
 
 # Or use the command-line tool from the ax12-research project
-python3 tools/gps_tool.py position
+su 0 python3 tools/gps_tool.py position
 ```
 
-The GPS data is accessible through Android's standard Location APIs once the YGPS app or location service is activated.
+Note: `gps_tool.py` returns WiFi-based network location by default. This gives you coordinates but is NOT a GPS satellite fix. Check the `provider` field to distinguish.
 
-## Other Discoveries from the Same Session
+## Other Discoveries
 
-While I was in there, I also confirmed:
-- **FM Radio** - the MT6631 has a fully functional FM receiver (chip ID 0x6631). Controllable via ioctl. Whether the antenna path is connected to the headphone jack needs more testing.
-- **9-DOF IMU** - ICM-42607 with 400Hz gyroscope, 125Hz accelerometer, and 50Hz magnetometer. Head tracking anyone?
-- **USB HID Gamepad** - kernel has CONFIG_USB_F_HID compiled in. The AX12 can present itself as a USB gamepad to any PC. Plug into your simulator, no drivers needed.
-- **AI Accelerator** - MediaTek VPU/APU neural network hardware with NNAPI support
-- **HDMI Output** - ITE IT66121 HDMI transmitter for screen mirroring to external displays
+While investigating, I also confirmed:
+- **FM Radio** — MT6631 FM tuner responds to ioctl commands. Antenna path (headphone jack) needs testing.
+- **IMU** — ICM-42607 6-axis (driver broken in current firmware, needs RadioMaster fix)
+- **HDMI Output** — IT66121 HDMI transmitter for screen mirroring
+- **USB OTG** — Sysfs controls respond, needs physical testing with USB-C OTG adapter
 
 ## Open Source
 
-All tools are at **github.com/rmeadomavic/ax12-research** - the first (and currently only) open-source development toolkit for the AX12. Includes:
-- GPS position tool with Google Maps links
-- UMBUS protocol fully decoded (8 frame types, CRC-8/MAXIM)
-- .rcm model format reverse-engineered with backup/restore
-- ELRS telemetry decoder
-- USB gamepad mode
-- 13 Lua scripts (CCIP targeting, TAK OSD, compass, race timer, preflight checklist, etc.)
-- 30+ Python tools total
-
-The AX12 is way more capable than anyone realized. RadioMaster put a phone-grade SoC in a transmitter and we're just starting to unlock what it can do.
+All tools at **github.com/rmeadomavic/ax12-research** — the first open-source research toolkit for the AX12.
 
 ---
 
-*Tested on AX12 firmware K908-V2.0, Android 9, rooted with Magisk, Termux + Claude Code for development.*
-
+*Tested on AX12 firmware K908-V2.0, Android 9, factory root (userdebug build).*

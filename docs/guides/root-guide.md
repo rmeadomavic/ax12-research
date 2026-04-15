@@ -163,26 +163,12 @@ Failed critical init step 4 - This firmware cannot be supported
 
 This doesn't matter since factory `su` is available.
 
-### Persistent Root with Magisk (Advanced)
+### Magisk (Not Required)
 
-**Status: Work in Progress**
-
-The AX12's boot chain makes Magisk installation challenging:
-
-1. **dm-verity is enforcing** — the kernel verifies the boot partition on every boot. If the boot image is modified (e.g., patched by Magisk), dm-verity detects the change and reverts it.
-
-2. **eMMC write protection** — the boot partition device (`/dev/block/mmcblk0p28`) is hardware write-protected. Direct `dd` writes appear to succeed but don't persist.
-
-3. **Whole-disk bypass** — writing to the raw eMMC device (`/dev/block/mmcblk0`) at the boot partition's sector offset (964608) DOES bypass the partition-level write protection. The write persists through a reboot.
-
-4. **But dm-verity wins** — even though the patched boot image is physically on disk, dm-verity detects the modification during boot and restores the original.
-
-**Current approach under investigation:**
-- Disabling dm-verity via `adb disable-verity` (requires unlocked bootloader)
-- Bootloader unlock via `fastboot flashing unlock` (untested, could brick)
-- Custom kernel with dm-verity disabled
-
-**For most development purposes, `su 0` provides everything you need.** Magisk is only necessary if you need root access from apps (not Termux) or want Magisk modules.
+Factory `su 0` provides full root for Termux and all development workflows.
+Magisk installation is blocked by dm-verity and eMMC write protection on the
+boot partition — patched boot images don't persist across reboots. This is an
+unsolved problem and not worth pursuing for most use cases.
 
 ## Step 7: Verify Everything Works
 
@@ -193,8 +179,8 @@ ssh -p 8022 <AX12_IP_or_Tailscale_IP>
 # Test root
 su 0 id
 
-# Read serial data (the MCU communication bus)
-su 0 cat /dev/ttyS0 | xxd | head -20
+# Monitor serial traffic (via strace on the Flyshark app — never read ttyS0 directly)
+su 0 strace -e read,write -p $(su 0 pidof com.Flyshark.RadioMasterAX) -x -s 512 2>&1 | grep ttyS0 | head -20
 
 # Check device tree
 su 0 ls /proc/device-tree/

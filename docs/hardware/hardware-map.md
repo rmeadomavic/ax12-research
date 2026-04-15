@@ -555,42 +555,6 @@ The IT66121 is an HDMI 1.4 transmitter by ITE Tech. Its register set is fully I2
 The RN6752M is a Richnano analog video decoder (AHD/TVI/CVI/CVBS → MIPI CSI-2). It handles analog-domain input only — HDMI input likely goes through a separate HDMI-to-analog bridge upstream. The RN6752M adds minimal latency (1-3 scan lines, ~30-100µs) as it's primarily a protocol converter, not an ISP.
 
 
-## Complete I2C Device Map
-
-Full enumeration from sysfs device names (verified 2026-04-13):
-
-| Bus | Addr | Name | Chip | Status |
-|-----|------|------|------|--------|
-| 0 | 0x40 | cap_touch | GSL680 | Active - touchscreen controller |
-| 1 | 0x01 | i2c_demo | Reference stub | Inactive - MT8788 BSP artifact |
-| 1 | 0x0C | msensor | Magnetometer | Active - part of 9-axis fusion |
-| 1 | 0x10 | gsensor_a | Accelerometer HAL | Active - IMU accel for SensorService |
-| 1 | 0x11 | gyro_g | Gyroscope HAL | Active - IMU gyro for SensorService |
-| 1 | 0x4C | it66121 | ITE IT66121 | Active - HDMI 1.4 transmitter (output) |
-| 1 | 0x68 | gsensor | ICM-42607 accel | Active - raw accel interface |
-| 1 | 0x69 | gyro | ICM-42607 gyro | Active - raw gyro interface |
-| 2 | 0x0C-0x54 | camera_* | 8 entries | NOT POPULATED - phantom DT entries |
-| 3 | 0x08 | nfc | NFC controller | NOT POPULATED - DT stub, CONFIG_NFC=n |
-| 3 | 0x1E | alsps | ALS/proximity | NOT POPULATED - DT stub |
-| 4 | 0x0E-0x52 | camera_main_two_* | 5 entries | NOT POPULATED - phantom DT entries |
-| 5 | 0x34 | subpmic_pmu | MT6370 sub-PMIC | Active - LED/charger/LDO controller |
-| 5 | 0x4E | usb_type_c | MT6370 TCPC | Active - USB-C PD/OTG negotiation |
-| 6 | 0x34 | speaker_amp | Richtek RT5509 | Active - Class-D speaker amplifier |
-| 6 | 0x4B | rt9465 | Richtek RT9465 | Active - secondary charging IC |
-
-Summary: 28 registered I2C devices across 7 buses. 11 active, 14 phantom from MT8788 reference design, 3 camera control stubs.
-
-### HDMI Signal Path
-
-The AX12 has separate input and output HDMI paths using different chips:
-
-- HDMI OUTPUT: MT8788 display pipeline -> IT66121 HDMI 1.4 transmitter (I2C bus 1, addr 0x4C) -> HDMI Out connector
-- HDMI INPUT: External HDMI source -> bridge chip (TBD) -> RN6752M analog decoder -> MIPI CSI-2 -> MT8788 ISP -> display
-
-The IT66121 register set is fully I2C-accessible. A mainline Linux DRM bridge driver exists (merged kernel 5.15+) but needs backporting for 4.4.
-
-The RN6752M adds minimal latency (1-3 scan lines, approximately 30-100 microseconds) as it is primarily a protocol converter, not an image signal processor. No public datasheet; register map available only under NDA.
-
 
 ## Cellular Modem (Not Populated, Hardware Present)
 

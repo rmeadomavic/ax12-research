@@ -46,7 +46,7 @@ local tips = {
   "Meshtastic: Open the app and pair a LoRa node",
   "HDMI: Plug Mini HDMI cable to mirror screen",
   "SSH: Tailscale at 100.87.134.108 port 8022",
-  "Root: Magisk grants su for system-level access",
+  "Root: Factory su 0 for system-level access",
   "Termux: Full Linux env - Python/Node tools",
   "ELRS: Long-press bind btn for WiFi update",
   "Backup: adb pull /storage/emulated/0/AX12LUA",

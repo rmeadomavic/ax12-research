@@ -66,66 +66,30 @@ The AT32 runs **RadioMaster proprietary firmware**, not EdgeTX:
 
 ## SWD Debug Access
 
-If Flash Access Protection (FAP) is **not** enabled, the firmware can be
-dumped via SWD test points on the PCB:
+The AT32F435 uses FAP (Flash Access Protection), analogous to STM32's RDP:
+- **Level 0**: Unprotected — full flash dump via SWD
+- **Level 1**: Debug reads blocked — reversible only with full flash erase
+- **Level 2**: Permanent — JTAG/SWD disabled entirely
 
-| Signal | Description |
-|--------|-------------|
-| SWDIO | Serial Wire Data I/O |
-| SWCLK | Serial Wire Clock |
-| GND | Ground reference |
-| VCC | 3.3V reference (may be needed for level shifting) |
+SWD test points (SWDIO, SWCLK, GND, optional nRST) are expected on the PCB but have not been located yet.
 
-**Compatible tools:** J-Link, ST-Link (with AT32 support), DAPLink, OpenOCD
-(AT32F435 target config available in recent builds).
+**Tools:** J-Link (via Artery DFP), OpenOCD (Artery's fork), pyOCD (CMSIS pack), Artery ICP Programmer.
 
-**If FAP is enabled:** Flash readout is locked. Would require glitching or
-other invasive techniques to bypass.
+**Procedure:**
+1. Locate SWD pads on PCB
+2. Connect debug probe and check FAP level
+3. If Level 0: dump flash immediately
+4. If Level 1: voltage glitching required (no published AT32-specific bypass)
+5. If Level 2: debug interface permanently disabled
 
 ## Betaflight AT32 Support
 
-Betaflight has **official AT32F435 support** for flight controllers, which
-means the AT32 toolchain, OpenOCD configs, and community knowledge exist.
-This is useful context even though the AX12's AT32 runs TX firmware, not
-Betaflight — the same debug tools and flash procedures apply.
+Betaflight has official AT32F435 support for flight controllers. The same toolchain, OpenOCD configs, and debug procedures apply to the AX12's AT32 even though it runs TX firmware, not Betaflight.
 
 ## Next Steps
 
-1. **Open the AX12** and locate SWD test points (SWDIO, SWCLK) on the MCU
-2. **Probe FAP status** — connect via SWD and check if flash readout is locked
-3. **Attempt firmware dump** — if unlocked, pull the full flash image
-4. **Disassemble** — Cortex-M4 firmware in Ghidra with AT32F435 SVD for
-   peripheral register names
-5. **Map UMBUS encoding** — correlate disassembled ADC/GPIO routines with
-   known UMBUS frame fields to decode remaining unknowns
-
-
-## SWD Debug Access
-
-The AT32F435 uses FAP (Flash Access Protection), mirroring STM32's RDP:
-- **Level 0**: Unprotected. SWD can read all flash freely. Full firmware dump is trivial.
-- **Level 1**: Debug reads blocked. Reversible only with full flash erase.
-- **Level 2**: Permanent. JTAG/SWD disabled entirely.
-
-### Tool Support
-- **J-Link**: Supported via Artery device pack (DFP)
-- **OpenOCD**: Artery's fork supports AT32F435 (bundled with AT32 IDE)
-- **pyOCD**: Supported via CMSIS pack
-- **Artery ICP Programmer**: Free proprietary tool
-
-### Procedure
-1. Locate SWD pads on PCB (standard ARM: SWDIO + SWCLK + GND + optional nRST)
-2. Connect J-Link or ST-Link clone
-3. Check FAP level first
-4. If Level 0: dump full flash immediately
-5. If Level 1: can connect but reads fail — need voltage glitching (no published AT32-specific bypass)
-6. If Level 2: debug interface is permanently disabled
-
-### AX12 Thermal Zones
-| Zone | Type | Description |
-|------|------|-------------|
-| thermal_zone0 | mtktsbattery | Battery: 25.0C (idle) |
-| thermal_zone1 | mtktscpu | CPU: 50.6C (under load) |
-| thermal_zone2 | mtktspa | Power amplifier: -127C (not present/invalid) |
-| thermal_zone3 | mtktspmic | PMIC |
-| thermal_zone4 | mtktswmt | WiFi/BT combo chip |
+1. Open the AX12 and locate SWD test points
+2. Probe FAP status
+3. Attempt firmware dump if unlocked
+4. Disassemble in Ghidra with AT32F435 SVD
+5. Correlate ADC/GPIO routines with known UMBUS frame fields
