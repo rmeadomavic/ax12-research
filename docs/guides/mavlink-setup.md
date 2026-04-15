@@ -1,9 +1,12 @@
 # MAVLink Telemetry over ELRS on the AX12
 
-End-to-end setup for full ArduPilot telemetry on the RadioMaster AX12
-using ELRS MAVLink mode. After this guide you will have live flight data,
-parameter editing, and mission upload — either on the AX12 itself via QGC
-or on a laptop over WiFi.
+End-to-end setup for ArduPilot telemetry on the RadioMaster AX12 using
+ELRS MAVLink mode.
+
+**Status: Untested on AX12.** This guide is assembled from ELRS 3.5.0
+documentation and QGC setup procedures. It has not been validated
+end-to-end on the AX12 hardware. The ttyS1 serial port (backpack UART)
+has not been confirmed to carry MAVLink traffic.
 
 ## Prerequisites
 

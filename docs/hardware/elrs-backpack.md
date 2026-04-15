@@ -3,9 +3,14 @@
 ## Overview
 
 The AX12 includes a dedicated ELRS backpack chip, separate from the main
-ESP32+LR1121 radio module. The backpack provides WiFi-based auxiliary
-functions: VTX sync, OTA updates, MAVLink forwarding, and wireless input
-expansion.
+ESP32+LR1121 radio module. Per ExpressLRS documentation, the backpack
+supports WiFi-based auxiliary functions: VTX sync, OTA updates, MAVLink
+forwarding, and wireless input expansion.
+
+**None of these capabilities have been tested on the AX12.** The backpack
+communicates via ttyS1 @ 460800 baud, but no traffic has been captured on
+that port — it is silent at idle. Whether the backpack is powered and
+responsive has not been confirmed.
 
 **Source:** `github.com/ExpressLRS/targets` — `TX/Radiomaster AX12.json`
 

@@ -127,7 +127,7 @@ Beyond RC control, the app is a full ground control station:
 1. **EdgeTX heritage** — Mixer, sources, curves, Lua API, and model format are direct ports from EdgeTX/OpenTX.
 2. **UMBUS wraps CRSF** — ELRS telemetry travels as CRSF frames encapsulated in UMBUS 0x15 messages.
 3. **33 output channels** — Not the standard 16; full 33-channel system with per-channel reverse, slow motion, min/max, curves, and dual rates.
-4. **Three transports** — UART (primary), TCP (simulator/debug), USB-HID (PC); all speak UMBUS.
+4. **Transport symbols** — UART (primary, confirmed active), TCP, and USB-HID handler symbols exist in the binary. Only UART has been observed carrying UMBUS traffic.
 5. **Dual UI** — Qt Quick/QML for main UI, LVGL for Lua script widgets.
 6. **Sole ttyS0 consumer** — All protocol research must go through strace while the app is running.
 

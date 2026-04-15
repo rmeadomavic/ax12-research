@@ -212,7 +212,7 @@ The MT8788 SoC includes sensor interfaces originally designed for a phone/tablet
 
 | Sensor | Chip | I2C Address | Bus | Status | Potential Use |
 |--------|------|-------------|-----|--------|---------------|
-| IMU (6-axis) | ICM-42607 | 0x68/0x69 | i2c@11011000 | Active — drivers loaded, SensorService delivering data | Accel 125Hz, gyro 10-400Hz, FIFO 4500 events. 9-axis fusion available. Data path: SCP→HAL→SensorService (no direct I2C — no i2c-dev module). Not used by Flyshark for head-tracking |
+| IMU (6-axis) | ICM-42607 | 0x68/0x69 | i2c@11011000 | Drivers loaded, sensor output unverified | Accel 125Hz, gyro 10-400Hz, FIFO 4500 events. 9-axis fusion available. Data path: SCP→HAL→SensorService (no direct I2C — no i2c-dev module). Not used by Flyshark. **Actual sensor output has not been verified against physical motion.** Sensor HAL has known issues (expected sysfs nodes missing). |
 | Magnetometer | Unknown | 0x0c | i2c@11011000 | Present | Compass heading for GCS |
 | GPS | MT6631 combo | /dev/stpgps (char 191,0) | Internal (STP transport) | Software functional, **NO ANTENNA POPULATED** | GNSS mode 1 (GPS+GLONASS), scans BeiDou. Daemons: mnld, mtk_agpsd, gnss@1.1-service, lbs_hidl_service. AGC: L1 ~2800-3100, L5 ~6300-6400 (thermal noise floor only — no antenna). Zero satellites acquired across hours of testing including window-mounted. GNSS RTC stuck at 2000-01-01 (never obtained a time fix). RadioMaster did not populate the ceramic patch antenna or RF trace on the PCB. **Unusable without external antenna hardware modification.** Not used by Flyshark. Test: `su 0 am start -n com.mediatek.ygps/.YgpsActivity` |
 | ALS/Proximity | Unknown | 0x1e | i2c@1100f000 | **NOT POPULATED** | Device tree entry inherited from MT8788 reference design. Full I2C bus scan with custom kernel module confirmed zero devices respond at this address. No physical sensor on PCB. |
@@ -235,7 +235,7 @@ Peripherals confirmed via /sys, /dev, and device-tree probing (2026-04-13):
 | LCD backlight | sysfs | `/sys/class/leds/lcd-backlight/brightness` | 0-255 range. |
 | MT6370 PMU LEDs | sysfs | `/sys/class/leds/led{1-4}/brightness` | 4 ISINK channels. led1-led3 max brightness 6, led4 max brightness 3. |
 | NFC chip | I2C | Bus 3, addr 0x08 | **NOT POPULATED.** DT entry inherited from MT8788 reference design. Bus scan confirmed no device responds. Kernel also has CONFIG_NFC=n. |
-| FM Radio | char device | `/dev/fm` (char 213:0) | **Fully functional.** MT6631 combo chip, firmware mt6631_fm_v1_patch.bin loaded. Tunes 87.5-108.0 MHz. RSSI reads -114 dBm without antenna (needs headphone cable as antenna via 3.5mm jack). Pre-installed app: com.android.fmradio. Ioctl map: POWERUP=0xC008F500, TUNE=0xC008F502, GETRSSI=0xC008F507. |
+| FM Radio | char device | `/dev/fm` (char 213:0) | **Chip responds to ioctl.** MT6631 combo chip, firmware mt6631_fm_v1_patch.bin loaded. Tunes 87.5-108.0 MHz via ioctl. RSSI reads -114 dBm without antenna (needs headphone cable as antenna via 3.5mm jack). Pre-installed app: com.android.fmradio. Ioctl map: POWERUP=0xC008F500, TUNE=0xC008F502, GETRSSI=0xC008F507. **Audio output not confirmed** — mixer controls writable but no verification that sound actually plays. |
 | Flash LEDs | MT6370 driver | — | Driver loaded but LEDs not physically populated (intended for camera connector). |
 | ALS/Proximity | I2C | Bus 3, addr 0x1E | **NOT POPULATED.** DT entry inherited from MT8788 reference design. Bus scan confirmed no device responds. |
 | Touchscreen | I2C | Bus 0, addr 0x40 | GSL680 (SiliconWorks), driver gslX680. |

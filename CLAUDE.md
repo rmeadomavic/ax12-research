@@ -30,3 +30,55 @@ su 0 strace -e read,write -p <pid> -x -s 512 2>&1 | grep ttyS0
 
 Attach to the process that owns the serial port. Do not open the port
 from a second process.
+
+## Ground Truth Reference
+
+Before stating any capability as "confirmed" or "working," check this list.
+The GPS error (WiFi coordinates labeled as satellite fix) survived multiple
+doc iterations because each pass trusted the previous one instead of
+checking evidence.
+
+### Confirmed (captured, measured, or tested on device)
+
+- UMBUS protocol: 8 frame types captured in idle-raw-10s.bin with frame
+  counts. CRC-8/MAXIM with per-type init values validated at 99.4%+.
+- Gimbal/switch/pot mapping: Verified via calibrator.py live input testing.
+- MCU autonomous operation: Confirmed from umbus-mcu-standalone.bin capture
+  (all frame types broadcast without Flyshark running).
+- Factory root: SUID su binary at /system/xbin/su, userdebug build,
+  SELinux permissive. No exploit, no Magisk.
+- I2C device map: 28 devices enumerated via sysfs. Active/phantom status
+  confirmed per bus scan (2026-04-13).
+- GPS/NFC/camera NOT populated: Confirmed via I2C bus scan, AGC at noise
+  floor, zero satellite acquisitions, thermal sensors at -127C.
+- Lua dead stubs: serialRead/Write confirmed as bare ret instructions
+  via disassembly.
+
+### Inferred (from symbols, specs, or external docs — not tested on AX12)
+
+- ELRS backpack capabilities (WiFi AP, MAVLink forwarding, VTX sync, OTA):
+  Entirely from ExpressLRS documentation. ttyS1 is silent — no traffic
+  captured. Backpack may not even be powered/functional.
+- Three UMBUS transports (TCP, USB-HID): Symbol names exist in native lib.
+  Only UART is confirmed from captures. TCP/USB-HID may be dead code.
+- ELRS telemetry field mapping (bytes 11-16 = RSSI/LQ/SNR): Inferred from
+  CRSF spec. All values are zero in idle captures. Needs bound receiver.
+- FM radio audio: ioctl commands accepted, mixer controls writable. No
+  confirmation that audio actually plays through speakers or headphones.
+- MAVLink setup guide: Written from ELRS 3.5 specs and QGC docs. Never
+  tested end-to-end on AX12.
+- IMU data: Drivers loaded, SensorService running. Actual sensor output
+  never verified against physical motion. Sensor HAL has known issues.
+- Native library architecture: All from strings/readelf, no decompilation.
+  Class relationships and transport claims are structural inference.
+- 140ms HDMI latency: Pipeline analysis estimate, not clean end-to-end
+  measurement.
+
+### Common False Patterns to Watch For
+
+- "Driver loaded" ≠ "hardware works" (GPS, IMU)
+- "sysfs write succeeded" ≠ "hardware switched modes" (USB OTG, gamepad)
+- "Tool printed success" ≠ "feature works end-to-end" (FM, CoT, MAVLink)
+- "Symbol exists in .so" ≠ "code path is active" (TCP/USB-HID transports)
+- "dumpsys returns coordinates" ≠ "GPS satellite fix" (WiFi location)
+- "Satellites in view" ≠ "satellites acquired" (YGPS app)

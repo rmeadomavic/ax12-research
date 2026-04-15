@@ -72,7 +72,7 @@ The Flyshark app (`com.Flyshark.RadioMasterAX`) is a Qt6/QML application with a 
 
 ### Message Routing
 
-AppComHub receives raw bytes from three transports and routes parsed UMBUS messages:
+AppComHub has symbols for three transports, though only UART is confirmed active from captures. TCP and USB-HID handlers exist in the binary but may be dead code or debug/simulator paths:
 
 ```
 QCommUsart (UART/ttyS0) ──→ umbusRxPackCallBack() ──→ uartPackReceived()
@@ -463,7 +463,7 @@ The library contains 200+ `STR_*` constants for UI localization. Key RC-specific
 
 2. **UMBUS Wraps CRSF**: The app speaks UMBUS to the MCU over UART. For ELRS communication, CRSF frames are encapsulated within UMBUS messages. The MCU then relays CRSF to the actual ELRS RF module.
 
-3. **Three Communication Transports**: UART (primary, to MCU), TCP (network, for simulators?), USB-HID (for direct PC connection). All use the same UMBUS protocol.
+3. **Three Transport Symbols**: UART (primary, confirmed active to MCU), TCP, and USB-HID handlers exist in the binary. Only UART traffic has been captured — TCP and USB-HID may be unused code paths (simulator stubs, debug interfaces, or unreleased features).
 
 4. **Full GCS Capability**: The app is far more than a radio controller — it includes a full ground control station with maps, terrain, mission planning, FC settings, telemetry, and video streaming.
 
@@ -519,7 +519,7 @@ AppComHub is the central message dispatcher:
 | umbusPackRxed | General UMBUS pack handler |
 | umbusDataPackRxed | Data-specific pack handler |
 
-Discovery: UMBUS protocol has THREE transport layers - UART, TCP, and USB HID.
+Discovery: UMBUS binary has symbols for three transports (UART, TCP, USB HID). Only UART confirmed active.
 
 ### UMBUS Pack Receivers (per controller)
 | Class | Responsibility |

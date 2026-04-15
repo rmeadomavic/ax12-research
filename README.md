@@ -35,7 +35,7 @@ The Android side runs Flyshark, a Qt6/QML application with an embedded Lua 5.3 V
 
 **Undocumented hardware.** GPS stack (MT6631, software functional but antenna not populated on PCB — zero satellites acquired), FM tuner, HDMI video input via RN6752M, IMU (ICM-42607, driver broken in current firmware), USB OTG support in sysfs, dormant LTE baseband with no SIM slot. None exposed by the stock UI. [Hardware map →](docs/hardware/hardware-map.md)
 
-**25MB native library analyzed.** 13,000+ dynamic symbols. Three communication transports (UART, TCP, USB-HID), Lua 5.3 VM with LVGL bindings, ground control station with offline maps. Analysis via strings/readelf — no decompilation. [Analysis →](docs/software/native-lib-analysis.md)
+**25MB native library analyzed.** 13,000+ dynamic symbols via strings/readelf (no decompilation). UART transport confirmed active; TCP and USB-HID handler symbols present but unobserved. Lua 5.3 VM with LVGL bindings. Built-in ground control station with offline maps. [Analysis →](docs/software/native-lib-analysis.md)
 
 ## Quick Start
 
