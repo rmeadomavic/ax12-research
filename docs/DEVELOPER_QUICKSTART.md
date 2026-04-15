@@ -4,7 +4,7 @@ Get productive with AX12 development in 10 minutes.
 
 ## Prerequisites
 
-- RadioMaster AX12 (rooted with Magisk)
+- RadioMaster AX12 (factory root — userdebug build, no Magisk needed)
 - Termux installed + SSH configured
 - WiFi/Tailscale for remote access
 
