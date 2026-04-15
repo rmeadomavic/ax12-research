@@ -98,6 +98,10 @@ On a rooted AX12, see the [Capture Session Guide](docs/guides/capture-session-gu
 
 Full list: [`tools/README.md`](tools/README.md)
 
+### Tactical Tools
+
+Operational tools (ATAK/CoT bridges, MAVLink integration, airspace awareness, Lua tactical widgets) are in a separate repo: [`ax12-tac-tools`](https://github.com/rmeadomavic/ax12-tac-tools)
+
 ## Specifications
 
 | | |

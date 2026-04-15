@@ -518,85 +518,7 @@ python3 tools/latency-test.py --ws-port 8081
 
 ## Integration Tools
 
-### cot_bridge.py — ATAK Cursor-on-Target Bridge
-
-**Purpose:** Read MAVLink telemetry from serial (ELRS passthrough) and broadcast Cursor-on-Target (CoT) XML to ATAK via UDP. Places the drone on ATAK's map in real time.
-
-**Prerequisites:** Root for serial access. ATAK running and listening on UDP port 4242.
-
-**Usage:**
-
-```bash
-# Live from serial (ttyS1 at 460800 baud)
-su 0 python3 tools/cot_bridge.py
-
-# Synthetic test data (orbits null island)
-su 0 python3 tools/cot_bridge.py --test
-
-# Custom callsign and port
-su 0 python3 tools/cot_bridge.py --uid MyDrone --atak-port 4243
-
-# All options
-su 0 python3 tools/cot_bridge.py \
-    --port /dev/ttyS1 \
-    --baud 460800 \
-    --atak-host 127.0.0.1 \
-    --atak-port 4242 \
-    --uid ELRS-Drone-1 \
-    --interval 2.0
-```
-
-**CoT type:** `a-f-A-M-F-Q` (friendly air military fixed-wing UAV).
-
-**Example output:**
-
-```
-[cot_bridge] Opened /dev/ttyS1 at 460800 baud
-[cot_bridge] Sending CoT to 127.0.0.1:4242 every 2.0s
-[cot_bridge] UID: ELRS-Drone-1
-[cot_bridge] CoT sent: 34.05234,-118.24368 150m LOITER
-[cot_bridge] CoT sent: 34.05235,-118.24370 151m LOITER
-```
-
-**Caveats:**
-- Reads from `/dev/ttyS1` (MCU debug serial), not ttyS0.
-- Includes a full MAVLink v1/v2 parser (incremental, handles stream sync).
-- Falls back to synthetic data if serial open fails or data times out (5 seconds).
-- Serial is configured via raw termios: 8N1, no flow control.
-- Default send interval is 2 seconds; ATAK typically expects 1-5 Hz.
-
----
-
-### test_cot.py — CoT Test Sender
-
-**Purpose:** Send a single test CoT event to verify ATAK is receiving and rendering before running the full bridge.
-
-**Prerequisites:** ATAK running and listening on UDP.
-
-**Usage:**
-
-```bash
-# Send to default port (4242)
-python3 tools/test_cot.py
-
-# Custom port and callsign
-python3 tools/test_cot.py --port 4243 --uid TestDrone
-```
-
-**Example output:**
-
-```
-[test_cot] Sent CoT to 127.0.0.1:4242
-[test_cot] UID: ELRS-Drone-1
-[test_cot] Position: 0.0, 0.0 (null island) @ 100m
-[test_cot] XML (389 bytes):
-<?xml version="1.0" encoding="UTF-8"?><event ...>...</event>
-```
-
-**Caveats:**
-- No root required. No serial access.
-- Sends a single datagram and exits — not a continuous stream.
-- Position is hardcoded to null island (0, 0) at 100m altitude.
+Tactical tool documentation (CoT bridge, MAVLink bridge, airspace, payload drop, etc.) has moved to [ax12-tac-tools](https://github.com/rmeadomavic/ax12-tac-tools).
 
 ---
 
@@ -617,5 +539,3 @@ python3 tools/test_cot.py --port 4243 --uid TestDrone
 | live-mapper.py | Yes (live) | Direct | Yes (:8081) | Yes (web) |
 | fm_radio.py | Yes | /dev/fm | No | No |
 | latency-test.py | No | No | Yes (:8080) | No |
-| cot_bridge.py | Yes | /dev/ttyS1 | No | No |
-| test_cot.py | No | No | No | No |

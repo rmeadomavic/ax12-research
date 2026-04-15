@@ -17,7 +17,7 @@ Python toolchain for monitoring, capturing, and analyzing UMBUS protocol traffic
 | `fm_radio.py` | FM radio controller | `su 0 python3 fm_radio.py` |
 | `simulator.py` | Traffic simulator for offline development | `python3 simulator.py` |
 | `latency-test.py` | HDMI input latency timer | `su 0 python3 latency-test.py` |
-| `cot_bridge.py` | ATAK Cursor-on-Target bridge | `python3 cot_bridge.py` |
-| `test_cot.py` | CoT test sender | `python3 test_cot.py` |
 | `usb_otg.py` | USB OTG host mode toggle | `su 0 python3 usb_otg.py` |
 | `optimize.py` | Performance optimizer | `su 0 python3 optimize.py` |
+
+Tactical and operational tools (ATAK bridge, MAVLink bridge, airspace, payload drop, rover nav, etc.) have moved to [`ax12-tac-tools`](https://github.com/rmeadomavic/ax12-tac-tools).

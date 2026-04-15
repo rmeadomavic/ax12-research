@@ -37,9 +37,6 @@ CATEGORIES = [
         "name": "DEMOS",
         "tag": "02",
         "buttons": [
-            ("MAVLINK", "mavlink", f"su 0 {PYTHON3} {TOOLS_DIR}/mavlink_bridge.py test --duration 30", 35),
-            ("HYDRA", "hydra", f"su 0 {PYTHON3} {TOOLS_DIR}/hydra_display.py demo", 30),
-            ("COT BRIDGE", "cot", f"su 0 {PYTHON3} {TOOLS_DIR}/cot_bridge.py --test", 10),
             ("BETAFLIGHT", "bf", f"su 0 {PYTHON3} {TOOLS_DIR}/msp_client.py status --demo", 30),
         ],
     },
@@ -49,10 +46,7 @@ CATEGORIES = [
         "buttons": [
             ("FM RADIO", "fm", f"su 0 {PYTHON3} {TOOLS_DIR}/fm_radio.py info", 30),
             ("MODELS", "models", f"su 0 {PYTHON3} {TOOLS_DIR}/model_tool.py list", 30),
-            ("AIRSPACE", "airspace", f"su 0 {PYTHON3} {TOOLS_DIR}/airspace_check.py brief", 30),
             ("ELRS TELEM", "elrs", f"su 0 {PYTHON3} {TOOLS_DIR}/elrs_decoder.py --demo", 15),
-            ("PAYLOAD DROP", "payload", f"su 0 {PYTHON3} {TOOLS_DIR}/payload_drop.py calc --alt 50 --speed 10 --target-lat 35.038 --target-lon -79.525", 30),
-            ("ROVER NAV", "rover", f"su 0 {PYTHON3} {TOOLS_DIR}/rover_nav.py --demo", 15),
         ],
     },
     {

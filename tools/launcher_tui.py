@@ -26,18 +26,12 @@ CATEGORIES = [
         ("WIFI SCAN",   f"su 0 {PYTHON3} {TOOLS}/wifi_scanner.py scan", 30),
     ]),
     ("DEMOS", [
-        ("MAVLINK",     f"su 0 {PYTHON3} {TOOLS}/mavlink_bridge.py test --duration 30", 35),
-        ("HYDRA",       f"su 0 {PYTHON3} {TOOLS}/hydra_display.py demo", 30),
-        ("COT BRIDGE",  f"su 0 {PYTHON3} {TOOLS}/cot_bridge.py --test", 10),
         ("BETAFLIGHT",  f"su 0 {PYTHON3} {TOOLS}/msp_client.py status --demo", 30),
     ]),
     ("TOOLS", [
         ("FM RADIO",    f"su 0 {PYTHON3} {TOOLS}/fm_radio.py info", 30),
         ("MODELS",      f"su 0 {PYTHON3} {TOOLS}/model_tool.py list", 30),
-        ("AIRSPACE",    f"su 0 {PYTHON3} {TOOLS}/airspace_check.py brief", 30),
         ("ELRS TELEM",  f"su 0 {PYTHON3} {TOOLS}/elrs_decoder.py --demo", 15),
-        ("PAYLOAD DROP", f"su 0 {PYTHON3} {TOOLS}/payload_drop.py calc --alt 50 --speed 10 --target-lat 35.038 --target-lon -79.525", 30),
-        ("ROVER NAV",   f"su 0 {PYTHON3} {TOOLS}/rover_nav.py --demo", 15),
     ]),
     ("HARDWARE", [
         ("USB GAMEPAD", f"su 0 {PYTHON3} {TOOLS}/usb_gamepad.py status", 30),
