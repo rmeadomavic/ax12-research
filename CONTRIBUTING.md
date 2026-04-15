@@ -29,13 +29,10 @@ tooling improvements, and documentation are all welcome.
 
 ## Code Style
 
-- **Python 3.13, stdlib only** — no external dependencies (`pip install` is
-  not available on the target device)
+- **Python 3.13, stdlib only** — no pip on the target device
 - **Dataclass/enum patterns** — follow the conventions in `tools/umbus.py`
-- **Docstrings on all public functions** — one-line summary, then details
+- **Docstrings on public functions** — one-line summary, then details
 - **Type hints** — use them consistently
-- **No external dependencies** — everything must run with just the standard
-  library
 
 ## Reporting Protocol Findings
 
