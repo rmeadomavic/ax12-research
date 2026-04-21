@@ -67,6 +67,7 @@ On a rooted AX12, see the [Capture Session Guide](docs/guides/capture-session-gu
 - [System Audit](docs/hardware/system-audit.md) — Partitions, kernel modules, device nodes
 - [ELRS Backpack](docs/hardware/elrs-backpack.md) — ESP backpack, WiFi MAVLink, OTA
 - [MT8788 Research](docs/hardware/mt8788-research.md) — Platform internals
+- [Peripheral Exploration](docs/peripheral-exploration.md) — IMU, SPI1, Bluetooth, LEDs, modem, and 12 other subsystems
 
 ### Software
 - [Native Library](docs/software/native-lib-analysis.md) — 25MB `.so` reverse engineering
