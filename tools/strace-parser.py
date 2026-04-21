@@ -8,9 +8,14 @@ Usage:
     # From a saved strace file:
     python strace-parser.py captures/idle-strace.txt
 
+    # Export decoded frames as JSON (matches captures/frames.json format):
+    python strace-parser.py --json captures/idle-strace.txt > frames.json
+
     # From live strace (pipe):
     su 0 strace -tt -e trace=read,write -e read=FD -e write=FD -p PID 2>&1 | python strace-parser.py -
 """
+import argparse
+import json
 import sys
 import os
 import re
@@ -111,17 +116,79 @@ def parse_strace_syscalls(text: str) -> list[dict]:
     return records
 
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python strace-parser.py <strace-output.txt>")
-        print("       su 0 strace ... 2>&1 | python strace-parser.py -")
-        sys.exit(1)
+def frame_to_dict(frame) -> dict:
+    """Convert a UMBUSFrame to the captures/frames.json dict format.
 
-    if sys.argv[1] == '-':
+    Keys: t (type byte), n (type name), s (size), h (hex), ok (checksum),
+    and for channel data frames: g (gimbals), ch (channels).
+    """
+    d = {
+        't': frame.frame_type,
+        'n': frame.type_name,
+        's': len(frame.raw),
+        'h': frame.raw.hex(),
+        'ok': frame.checksum_valid,
+    }
+    if frame.gimbals is not None:
+        d['g'] = frame.gimbals
+    if frame.channels is not None:
+        d['ch'] = frame.channels
+    return d
+
+
+def decode_frames_from_text(text: str) -> tuple:
+    """Decode UMBUS frames from strace text.
+
+    Returns (decoder, frames_list) where frames_list contains UMBUSFrame objects.
+    """
+    records = parse_strace_syscalls(text)
+    decoder = UMBUSDecoder()
+    frames = []
+
+    if records:
+        for record in records:
+            hex_data = record.get('hex_data', b'')
+            if hex_data:
+                for frame in decoder.feed(hex_data):
+                    frames.append(frame)
+    else:
+        raw = extract_hex_from_strace(text)
+        if raw:
+            for frame in decoder.feed(raw):
+                frames.append(frame)
+
+    return decoder, frames
+
+
+def export_json(frames, total_bytes: int) -> str:
+    """Export frames as JSON matching the captures/frames.json format."""
+    return json.dumps({
+        'bytes': total_bytes,
+        'frames': [frame_to_dict(f) for f in frames],
+    })
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Parse UMBUS frames from strace output.',
+        epilog='Example: su 0 strace ... 2>&1 | python strace-parser.py --json -',
+    )
+    parser.add_argument('file', help='strace output file, or - for stdin')
+    parser.add_argument('--json', action='store_true', dest='json_mode',
+                        help='export decoded frames as JSON (captures/frames.json format)')
+    args = parser.parse_args()
+
+    if args.file == '-':
         text = sys.stdin.read()
     else:
-        with open(sys.argv[1], 'r') as f:
+        with open(args.file, 'r') as f:
             text = f.read()
+
+    if args.json_mode:
+        decoder, frames = decode_frames_from_text(text)
+        total_bytes = sum(len(f.raw) for f in frames)
+        print(export_json(frames, total_bytes))
+        return
 
     # Parse syscall records
     records = parse_strace_syscalls(text)

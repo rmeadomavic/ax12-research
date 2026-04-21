@@ -44,7 +44,8 @@ a6 15 c3 02 00 ea 0a 3a ea ee 10 00 00 4e 20 00 00 1a 27 9f b7
 | 13-14 | `4E 20` | Data | Field 2 | 0x4E20 = 20000 decimal (timing/rate value) |
 | 15-16 | `00 00` | Data | Field 3 | Status/validity (0x0000=valid, 0xFFFF=invalid) |
 | 17 | `xx` | UMBUS | Counter | Monotonically incrementing sequence number |
-| 18-20 | `yy zz ww` | UMBUS | Checksum | UMBUS CRC/checksum (3 bytes) |
+| 18-19 | `yy zz` | Data | Payload | Varies; CRC-covered data (purpose unknown) |
+| 20 | `ww` | UMBUS | Checksum | CRC-8/MAXIM (init=0x32, computed over bytes 1-19) |
 
 ### UMBUS framing details (from UMBUS_GetPack disassembly at 0x152eca8)
 
@@ -207,7 +208,8 @@ This handler:
 | 15-16 | `00 00` (40/50 frames) | Normal: valid data / no downlink |
 | 15-16 | `FF FF` (10/50 frames) | Every 5th frame: invalid/timeout marker |
 | 17 | `1A`..`D6` | Incrementing counter; resets for FF-FF frames |
-| 18-20 | varies | UMBUS checksum/CRC |
+| 18-19 | varies | CRC-covered data (purpose unknown) |
+| 20 | varies | CRC-8/MAXIM checksum (init=0x32) |
 
 ### The every-5th-frame pattern
 
@@ -243,5 +245,36 @@ To capture meaningful RSSI/LQ/SNR data, a capture with a **bound and active rece
 ## Key Files
 
 - `/data/data/com.termux/files/home/ax12-research/captures/idle-raw-10s.bin` - Raw binary capture
-- `/data/data/com.termux/files/home/ax12-research/captures/idle-analysis.md` - Initial frame analysis
+- `../../data/idle-analysis.md` - Initial frame analysis
 - `/data/data/com.termux/files/home/ax12-research/native-lib/lib/arm64-v8a/libRadioMasterAX_arm64-v8a.so` - Native library
+
+
+### ELRS Telemetry Field Analysis (0x15, 21 bytes)
+
+From CRC-validated idle capture with no receiver connected (40 frames):
+
+| Byte | Value | Interpretation |
+|------|-------|---------------|
+| 0 | 0xA6 | Sync |
+| 1 | 0x15 | Type |
+| 2-3 | C3 02 | Header (ELRS module source) |
+| 4 | 0x00 | Constant — likely link status (0=no link) |
+| 5-6 | EA 0A | Constant (u16le: 2794) — config/version? |
+| 7-8 | 3A EA | Constant (u16le: 59962) — FHSS seed or freq? |
+| 9 | 0xEE | Constant (238) — RSSI sentinel? (no link = 0xEE) |
+| 10 | 0x10 | Constant (16) — LQ/SNR sentinel? |
+| 11-12 | 00 00 | Constant — zero/unused |
+| 13-14 | 4E 20 | Constant (u16le: 8270, big-endian: 20000) — TX power/rate? |
+| 15-16 | FF FF | Constant — invalid/no-data marker |
+| 17 | 246-248 | Varies slightly — module heartbeat counter? |
+| 18 | 4-250 | Varies widely (22 unique) — FHSS hop state? |
+| 19 | 27-253 | Varies widely (21 unique) — sequence/entropy? |
+| 20 | varies | CRC (CRC-8/MAXIM, init=0x32) |
+
+All bytes 4-16 are completely static when no receiver is linked.
+Bytes 17-19 change every frame even without a link, suggesting
+they encode ELRS module internal state (hopping, timing, entropy).
+
+To decode the actual telemetry fields (RSSI, LQ, SNR, TX power),
+need a capture with a receiver bound and linked — the constant
+values here are all no-link sentinels.

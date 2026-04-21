@@ -11,7 +11,7 @@ Hardware reverse engineering project for the RadioMaster AX12 transmitter.
 ## Repo
 
 - Published at github.com/rmeadomavic/ax12-research, branch `main`
-- Structure: `docs/`, `tools/`, `captures/`, `device-tree/`
+- Structure: `docs/` (protocol/, hardware/, software/, guides/), `tools/`, `captures/`, `data/`, `device-tree/`, `dashboard/`, `scripts/`
 - Native `.so` and `.apk` files are gitignored -- do not commit them
 
 ## Development Rules

@@ -1,0 +1,25 @@
+{
+  "session_id": "20260413-143313",
+  "device": "RadioMaster AX12",
+  "started": "2026-04-13T06:33:13.610928+00:00",
+  "pid": 25255,
+  "serial_fd": 94,
+  "default_duration": 8,
+  "segments": [
+    {
+      "index": 0,
+      "label": "baseline",
+      "type": "baseline",
+      "read_bytes": 0,
+      "write_bytes": 0,
+      "frames_total": 0,
+      "frames_valid": 0,
+      "frames_bad_crc": 0,
+      "bytes_skipped": 0,
+      "channel_frames": 0,
+      "duration_actual": 3.04
+    }
+  ],
+  "ended": "2026-04-13T06:36:32.476193+00:00",
+  "total_segments": 1
+}

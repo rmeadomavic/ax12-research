@@ -2,9 +2,11 @@
 
 RadioMaster's proprietary internal bus protocol for communication between the Android SoC (MT8788) and the AT32 MCU over UART.
 
-**Transport:** `/dev/ttyS0` @ 921,600 baud, 8N1  
+**Transport:** `/dev/ttyS0` @ 921,600 baud, 8N1 (verified via `stty -a -F /dev/ttyS0`)  
+**UART:** ST16650V2 at MMIO 0x11002000, clocal, no flow control  
 **Bandwidth:** ~2,414 bytes/sec (~19.3 kbps, ~2% of link capacity)  
-**Direction ratio:** 97.9% MCU→App, 2.1% App→MCU
+**Direction ratio:** 97.9% MCU→App, 2.1% App→MCU  
+**Serial lock:** `LCK..ttyS0` confirms app_process64 PID holds exclusive access
 
 ## Frame Format
 
@@ -72,10 +74,13 @@ Offset  Size  Type     Description
 20-21   2     u16le    Channel 1 output
 ...                    (continues for all channels)
 82-83   2     u16le    Last channel pair
-84      1     u8       Unknown
-85      1     u8       Sequence counter (incrementing)
+84      1     u8       Status/mode (oscillates 144-147 in idle)
+85      1     u8       Constant 0x01 (purpose unknown)
 86      1     u8       Checksum (CRC-8/MAXIM, init=0x00)
 ```
+
+
+**Bytes 14-17** (newly analyzed): Two u16le values. In idle state, consistently show 65036 (SWITCH_HIGH) and 500. These appear to be two additional channel outputs that precede the main 33-channel block — likely a pot/slider and a switch state not included in the primary channel map. Values differ from the main channel block (bytes 18+), suggesting these encode separate physical inputs.
 
 **Gimbal values** (bytes 6-13): Signed 16-bit little-endian. Range approximately -500 to +500 at center rest, full range TBD. Four axes correspond to two physical sticks (2 axes each). Axis-to-stick mapping requires physical testing.
 
@@ -102,6 +107,12 @@ Simple status frame. Content is always identical during normal operation.
 **Size:** 7 bytes  
 **Content (fixed):** `a6 08 10 02 04 03 00`
 
+
+**Idle state:** Frame is completely static: a6 08 10 02 04 03 00
+- Byte 4: 0x04 (sub-header)
+- Byte 5: 0x03 (MCU state — possibly 3=idle/ready)
+- Byte 6: 0x00 (CRC)
+
 #### 0x15 — ELRS/RF Telemetry (5 Hz)
 
 ELRS link statistics from the RF module, relayed through the MCU.
@@ -122,13 +133,14 @@ Offset  Size  Type     Description
 13-14   2     u16le    0x4E20 = 20000 (link rate or timer?)
 15-16   2     u8[2]    Link status (00 00 or ff ff)
 17      1     u8       Sequence counter (incrementing)
-18-20   3     u8[3]    CRC/checksum
+18-19   2     u8[2]    Varies; CRC-covered data (purpose unknown)
+20      1     u8       Checksum (CRC-8/MAXIM, init=0x32)
 ```
 
 **Example:**
 ```hex
-a6 15 c3 02 00 ea 0d 3a ea ee 10 00 00 4e 20 00
-00 2a e5 97 8e
+a6 15 c3 02 00 ea 0a 3a ea ee 10 00 00 4e 20 00
+00 1a 27 9f b7
 ```
 
 #### 0x10 — Extended Telemetry (~3 Hz)
@@ -170,6 +182,14 @@ T+1.000s: [0x07] + [0x0e]
 T+1.500s: [0x08] + [0x0c] + [0x0e]
 ```
 
+
+**Idle state analysis (3 CRC-validated frames):**
+
+- Byte 4: 0x06 (sub-type)
+- Byte 5: sequence counter (increments 0, 1, 2, ...)
+- Byte 8: 0x20 (32) constant in idle — possibly temperature or status
+- Bytes 6-7, 9-16: all zeros in idle — telemetry fields only populated when active
+
 #### 0x0E — Polling/Status Request (2 Hz)
 
 Present in EVERY write batch. The most frequent App→MCU message.
@@ -192,6 +212,23 @@ Always bundled with the heartbeat response.
 
 **Size:** 12 bytes  
 **Content (fixed during idle):** `a6 0c 10 04 02 81 01 01 00 00 00 7f`
+
+
+**Verified idle payloads** (from strace capture, all CRC-8/MAXIM init=0x00):
+
+| Type | Size | Payload (hex) | CRC |
+|------|------|---------------|-----|
+| 0x0E | 14B | a6 0e 10 04 02 02 06 4b 01 00 00 00 14 | 11 |
+| 0x08 | 8B | a6 08 35 04 05 01 80 | 84 |
+| 0x0C | 12B | a6 0c 10 04 02 81 01 08 00 00 00 | ec |
+| 0x07 | 7B | a6 07 2b 04 ff 01 | f4 |
+
+**Write batching:** The app concatenates multiple frames per write() call for efficiency:
+- 0x08 + 0x0C + 0x0E = 34-byte burst (heartbeat cycle)
+- 0x07 + 0x0E = 21-byte burst (keep-alive cycle)
+- 0x0E alone = 14-byte write (poll-only cycle)
+
+**MCU standalone behavior:** The MCU broadcasts all 4 MCU->App frame types at their documented rates even when the Flyshark app is not running. The AT32 operates completely autonomously.
 
 #### 0x07 — Keep-alive Ping (0.5 Hz)
 
@@ -255,7 +292,7 @@ checksum = umbus_crc8(frame[1:-1], init)
 
 The firmware also maintains a parallel XOR accumulator as a fallback: if the CRC doesn't match, a simple XOR of the same bytes is checked before declaring an error.
 
-See `docs/checksum-investigation.md` for the full binary analysis.
+See [checksum-investigation.md](checksum-investigation.md) for the full binary analysis.
 
 ## Frame Type Summary
 
@@ -284,8 +321,16 @@ The MCU sends channel data to the app in 0x57 frames. The app processes mixing a
 
 ## Open Questions
 
+### Verified
+
 - [x] Checksum algorithm: CRC-8/MAXIM (poly 0x31/0x8C reflected, init type-dependent)
-- [ ] Gimbal axis-to-stick mapping (needs physical testing with one stick at a time)
+- [x] Maximum number of channels in 0x57 frame: 33 (bytes 18-83 = 66 bytes / 2, indices 0-32)
+- [x] Baud rate: 921,600 baud verified via `stty -a -F /dev/ttyS0` (ST16650V2 UART, 8N1, MMIO 0x11002000)
+- [x] Serial lock: `LCK..ttyS0` confirms app_process64 PID holds exclusive access to ttyS0
+- [x] Gimbal axis-to-stick mapping: G0=Yaw/Left-X, G1=Pitch/Right-Y, G2=Throttle/Left-Y, G3=Roll/Right-X (confirmed via calibrator.py live testing)
+
+### Unresolved
+
 - [ ] Full gimbal value range (approximate -500 to +500 observed, full range unknown)
 - [ ] 0x15 field identification (which bytes are RSSI, LQ, SNR, TX power)
 - [ ] 0x10 sub-index purpose (what do sub-channels 0, 1, 2 represent)
@@ -293,4 +338,3 @@ The MCU sends channel data to the app in 0x57 frames. The app processes mixing a
 - [ ] 0x0C config: does content change with model/settings changes?
 - [ ] How CRSF frames are packed within UMBUS (exact encapsulation format)
 - [ ] Channel data during active control: do additional bytes change?
-- [ ] Maximum number of channels in 0x57 frame (32 theoretical, need to verify)

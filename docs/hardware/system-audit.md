@@ -223,8 +223,8 @@ Active device addresses detected on each bus:
 |-----|-----------|---------------|
 | i2c-0 | 0x40 | Cap touch controller |
 | i2c-1 | 0x01, 0x0C, 0x10, 0x11, 0x4C, 0x68, 0x69 | NM demo, msensor, ICM42607 accel, ICM42607 gyro, unknown(0x4C), gsensor, gyro |
-| i2c-2 | 0x0C, 0x10, 0x15, 0x33, 0x36, 0x43, 0x50, 0x54 | Camera AF, sub cam, sub AF, CCU main, main cam, CCU sub, main EEPROM, sub EEPROM |
-| i2c-3 | 0x08, 0x1E | NFC, ALS/proximity |
+| i2c-2 | 0x0C, 0x10, 0x15, 0x33, 0x36, 0x43, 0x50, 0x54 | Camera AF, sub cam, sub AF, CCU main, **0x36=RN6752M video decoder** (sensor ID 0x501, AHD/CVBS→MIPI CSI-2), CCU sub, main EEPROM, sub EEPROM |
+| i2c-3 | 0x08, 0x1E | NFC, ALS/proximity — **both NOT POPULATED** (DT entries from MT8788 reference design, bus scan confirmed no devices respond) |
 | i2c-4 | 0x0E, 0x11, 0x12, 0x38, 0x52 | Main2 AF, CCU main2, CCU main3, main2 cam, main2 EEPROM |
 | i2c-5 | 0x34, 0x4E | MT6370 sub-PMIC, USB Type-C |
 | i2c-6 | 0x34, 0x4B | Speaker amp, RT9465 charger |
@@ -388,3 +388,30 @@ Based on this audit, the following hardware interfaces are most relevant to RC r
 8. **ADC**: AUXADC with temperature and custom RF parameter channels
 9. **Bluetooth**: Integrated BT via WMT for wireless peripherals/trainers
 10. **WiFi**: Integrated WiFi for network connectivity, firmware updates
+
+
+## Engineering Mode Apps
+
+### ZTE Engineer (com.zte.engineer)
+Suggests ZTE is the ODM (Original Design Manufacturer) for the AX12 PCB.
+
+| Activity | Purpose |
+|----------|---------|
+| EngineerCode | Engineering code entry |
+| ProduceInfoListView | Production/calibration info |
+| BoardCode | Board/PCB identification |
+| NetlockInfo | Carrier lock status |
+| TestReceiveActivity | Receive test |
+| AlexWiFiTest | WiFi test utility |
+| AlexBackCameraTest | Back camera test |
+| AlexFrontCamera | Front camera test |
+| **GPIO** | GPIO control/test |
+| **SerialPort** | Serial port test |
+
+The GPIO and SerialPort activities may provide direct hardware access for testing.
+
+### MediaTek Engineer Mode (com.mediatek.engineermode)
+Standard MTK engineer mode with WiFi, RF desense, channel lock, tethering, and AT command capabilities. The USB OTG sysfs toggle was discovered through this app's Connectivity section.
+
+### MTK Logger (com.mediatek.mtklogger)
+System-level logging with debug toolbox. Can capture modem, network, and GPS logs.

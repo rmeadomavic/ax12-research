@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AX12 Calibration Tool</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --card: #1a2332;
+  --card2: #1e2a3a;
+  --border: #30404d;
+  --blue: #4a9eff;
+  --green: #7ed321;
+  --orange: #f5a623;
+  --red: #d0021b;
+  --purple: #bd10e0;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #555;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+#header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+#header h1 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--text);
+}
+#header h1 span { color: var(--blue); }
+
+#btn-reset {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 5px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 0.2s, color 0.2s;
+}
+#btn-reset:hover { border-color: var(--red); color: var(--red); }
+
+/* ── PANELS ── */
+#panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: calc(100vh - 80px);
+  flex: 1;
+}
+
+/* ── STATUS BAR ── */
+#statusbar {
+  height: 32px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 20px;
+  font-size: 12px;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 5px;
+}
+.status-dot.on { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.status-dot.off { background: var(--red); }
+#status-label { font-weight: 500; }
+
+/* ── DASHBOARD PANEL ── */
+#panel-left {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 10px;
+}
+
+/* ── GIMBAL BARS ── */
+#gimbal-section { }
+.gimbal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.gimbal-label {
+  width: 100px;
+  font-size: 12px;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+.gimbal-track {
+  flex: 1;
+  height: 12px;
+  background: #111;
+  border-radius: 6px;
+  position: relative;
+  overflow: visible;
+}
+.gimbal-center-line {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+}
+.gimbal-fill {
+  position: absolute;
+  top: 0;
+  height: 12px;
+  border-radius: 6px;
+  transition: left 0.04s, width 0.04s;
+  background: var(--blue);
+}
+.gimbal-fill.active { background: var(--orange); }
+.gimbal-value {
+  width: 48px;
+  text-align: right;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+
+/* ── CHANNEL CHIPS ── */
+#channel-section { }
+#channel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+  gap: 5px;
+}
+.ch-chip {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  padding: 5px 6px;
+  cursor: default;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.ch-chip.pulse { transform: scale(1.06); }
+.ch-chip.type-gimbal { background: #0d2040; border-color: var(--blue); }
+.ch-chip.type-switch { background: #0d2a0d; border-color: var(--green); }
+.ch-chip.type-active { background: #2a1a00; border-color: var(--orange); }
+.ch-chip.type-roller { background: #1a0d2a; border-color: var(--purple); }
+.ch-num {
+  font-size: 10px;
+  color: var(--text3);
+  display: block;
+  margin-bottom: 2px;
+}
+.ch-val {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: var(--text2);
+  display: block;
+}
+.ch-chip.type-gimbal .ch-num,
+.ch-chip.type-gimbal .ch-val { color: var(--blue); }
+.ch-chip.type-switch .ch-val { color: var(--green); }
+.ch-chip.type-active .ch-val { color: var(--orange); }
+.ch-chip.type-roller .ch-val { color: var(--purple); }
+
+/* ── WIZARD PANEL ── */
+#panel-right {
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Progress bar */
+#wizard-progress {
+  display: flex;
+  gap: 4px;
+}
+.prog-seg {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.prog-seg.done { background: var(--green); }
+.prog-seg.current { background: var(--orange); }
+
+/* Step header */
+#wizard-step-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+#wizard-step-num {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+#wizard-step-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Step body */
+#wizard-body {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 180px;
+  flex: 1;
+}
+
+/* Wizard instructions */
+.wizard-instruction {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.wizard-highlight {
+  color: var(--orange);
+  font-weight: 700;
+}
+.wizard-step-indicator {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Classification table */
+.class-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.class-table th {
+  text-align: left;
+  color: var(--text3);
+  font-weight: 600;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.class-table td {
+  padding: 4px 8px;
+  color: var(--text2);
+  border-bottom: 1px solid #1e2a3a;
+}
+.class-table tr:last-child td { border-bottom: none; }
+.badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.badge-jittery { background: #0d2040; color: var(--blue); }
+.badge-static { background: #2a2a2a; color: var(--text3); }
+.badge-stepped { background: #0d2a0d; color: var(--green); }
+
+/* Detection area */
+.detect-area {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.detect-label {
+  font-size: 12px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.detect-channel {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--orange);
+  font-family: 'Courier New', monospace;
+}
+.detect-value {
+  font-size: 13px;
+  color: var(--text2);
+  font-family: 'Courier New', monospace;
+}
+
+/* Range bar for gimbal cal */
+.range-track {
+  width: 100%;
+  height: 16px;
+  background: #111;
+  border-radius: 8px;
+  position: relative;
+  margin: 8px 0;
+  overflow: hidden;
+}
+.range-fill {
+  position: absolute;
+  top: 0; height: 16px;
+  background: var(--blue);
+  border-radius: 8px;
+  transition: left 0.1s, width 0.1s;
+}
+.range-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'Courier New', monospace;
+}
+
+/* Switch positions display */
+.pos-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.pos-chip {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+/* Label selector (switch identification) */
+.label-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 10px 0;
+}
+.label-btn {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 6px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
+}
+.label-btn:hover { background: #263347; border-color: var(--blue); }
+.label-btn.selected { background: #0d2040; border-color: var(--blue); color: var(--blue); }
+
+/* Confirm/action row */
+#wizard-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wiz-btn {
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s, background 0.15s;
+}
+.wiz-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #6aadff; }
+.btn-secondary { background: transparent; border-color: var(--border); color: var(--text2); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--text2); color: var(--text); }
+.btn-warn { background: transparent; border-color: var(--orange); color: var(--orange); }
+.btn-warn:hover:not(:disabled) { background: rgba(245,166,35,0.1); }
+.btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
+.btn-danger:hover:not(:disabled) { background: rgba(208,2,27,0.1); }
+.btn-green { background: var(--green); color: #0d1117; }
+.btn-green:hover:not(:disabled) { opacity: 0.85; }
+
+/* Completed list */
+#completed-list {
+  font-size: 12px;
+}
+#completed-list .comp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text3);
+  padding: 3px 0;
+}
+#completed-list .comp-item::before {
+  content: '✓';
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* Verification step */
+.verify-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.verify-control.verified { border-color: var(--green); background: #0d2a0d; }
+.verify-control.mismatch { border-color: var(--red); background: #2a0d0d; }
+.verify-label { color: var(--text); font-weight: 600; }
+.verify-ch { color: var(--text2); }
+.verify-status { font-size: 11px; font-weight: 700; }
+.verify-control.verified .verify-status { color: var(--green); }
+.verify-control.mismatch .verify-status { color: var(--red); }
+
+/* Save summary table */
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.summary-table th {
+  text-align: left;
+  color: var(--text3);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.summary-table td {
+  padding: 5px 8px;
+  color: var(--text2);
+  border-bottom: 1px solid #1e2a3a;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+.summary-table tr:last-child td { border-bottom: none; }
+
+.save-success {
+  background: #0d2a0d;
+  border: 1px solid var(--green);
+  border-radius: 6px;
+  padding: 12px;
+  color: var(--green);
+  font-size: 12px;
+  margin-top: 12px;
+  display: none;
+}
+.save-success.visible { display: block; }
+
+/* Redo buttons in verify */
+.redo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  #panels { grid-template-columns: 1fr; }
+  #panel-left { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>AX12 <span>Calibration</span> Tool</h1>
+  <button id="btn-reset">Reset</button>
+</div>
+
+<div id="panels">
+
+  <!-- ======= LEFT: LIVE DASHBOARD ======= -->
+  <div id="panel-left">
+
+    <div id="gimbal-section">
+      <div class="section-title">Gimbals</div>
+      <div id="gimbal-rows"></div>
+    </div>
+
+    <div id="channel-section">
+      <div class="section-title">Channels (33)</div>
+      <div id="channel-grid"></div>
+    </div>
+
+  </div>
+
+  <!-- ======= RIGHT: WIZARD ======= -->
+  <div id="panel-right">
+
+    <div id="wizard-progress"></div>
+
+    <div id="wizard-step-header">
+      <span id="wizard-step-num">STEP 1 / 8</span>
+      <span id="wizard-step-title">Discovery</span>
+    </div>
+
+    <div id="wizard-body"></div>
+
+    <div id="wizard-actions"></div>
+
+    <div id="completed-list"></div>
+
+  </div>
+</div>
+
+<div id="statusbar">
+  <span><span id="status-dot" class="status-dot off"></span><span id="status-label">Disconnected</span></span>
+  <span id="status-fps">0 fps</span>
+  <span id="status-crc">0 CRC errors</span>
+</div>
+
+<script>
+'use strict';
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+const STEP_ORDER = ['discovery','gimbal_id','gimbal_cal','switches','rollers','trims','verify','save'];
+const STEP_NAMES = {
+  discovery:  'Discovery',
+  gimbal_id:  'Gimbal Identification',
+  gimbal_cal: 'Gimbal Calibration',
+  switches:   'Switch Identification',
+  rollers:    'Rollers & Selector',
+  trims:      'Trims & Buttons',
+  verify:     'Verification',
+  save:       'Save',
+};
+const GIMBAL_LABELS = ['throttle','yaw','pitch','roll'];
+const GIMBAL_NAMES  = {throttle:'Throttle', yaw:'Yaw', pitch:'Pitch', roll:'Roll'};
+const GIMBAL_INSTRUCTIONS = {
+  throttle: 'Push <span class="wizard-highlight">LEFT STICK Up/Down</span>',
+  yaw:      'Move <span class="wizard-highlight">LEFT STICK Left/Right</span>',
+  pitch:    'Move <span class="wizard-highlight">RIGHT STICK Up/Down</span>',
+  roll:     'Move <span class="wizard-highlight">RIGHT STICK Left/Right</span>',
+};
+const SWITCH_LABELS = ['SA','SB','SC','SD','SE','SF','Shoulder-L','Shoulder-R'];
+
+// ============================================================
+// DOM ELEMENT CACHE
+// ============================================================
+const dom = {
+  statusDot:    document.getElementById('status-dot'),
+  statusLabel:  document.getElementById('status-label'),
+  statusFps:    document.getElementById('status-fps'),
+  statusCrc:    document.getElementById('status-crc'),
+  gimbalRows:   document.getElementById('gimbal-rows'),
+  channelGrid:  document.getElementById('channel-grid'),
+  wizProgress:  document.getElementById('wizard-progress'),
+  wizStepNum:   document.getElementById('wizard-step-num'),
+  wizStepTitle: document.getElementById('wizard-step-title'),
+  wizBody:      document.getElementById('wizard-body'),
+  wizActions:   document.getElementById('wizard-actions'),
+  completedList:document.getElementById('completed-list'),
+  btnReset:     document.getElementById('btn-reset'),
+};
+
+// ============================================================
+// CALIBRATION STATE (client-side mirror)
+// ============================================================
+const cal = {
+  gimbals:      {},   // {throttle: {channel, min, center, max}, ...}
+  switches:     {},
+  rollers:      {},
+  selector_6pos:{},
+  trims:        {},
+  buttons:      {},
+};
+
+// ============================================================
+// GIMBAL DOM INITIALISATION
+// ============================================================
+const gimbalEls = [];
+(function initGimbals() {
+  for (let i = 0; i < 4; i++) {
+    const row = document.createElement('div');
+    row.className = 'gimbal-row';
+    row.innerHTML = `
+      <span class="gimbal-label" id="glabel-${i}">G${i} — ?</span>
+      <div class="gimbal-track" id="gtrack-${i}">
+        <div class="gimbal-center-line"></div>
+        <div class="gimbal-fill" id="gfill-${i}"></div>
+      </div>
+      <span class="gimbal-value" id="gval-${i}">0</span>
+    `;
+    dom.gimbalRows.appendChild(row);
+    gimbalEls.push({
+      label: document.getElementById(`glabel-${i}`),
+      fill:  document.getElementById(`gfill-${i}`),
+      val:   document.getElementById(`gval-${i}`),
+    });
+  }
+})();
+
+// ============================================================
+// CHANNEL CHIP DOM INITIALISATION
+// ============================================================
+const chipEls = [];
+const chipPrev = new Array(33).fill(32768);
+
+(function initChips() {
+  for (let i = 0; i < 33; i++) {
+    const chip = document.createElement('div');
+    chip.className = 'ch-chip';
+    chip.id = `chip-${i}`;
+    chip.innerHTML = `<span class="ch-num">CH ${i}</span><span class="ch-val" id="chval-${i}">0x8000</span>`;
+    dom.channelGrid.appendChild(chip);
+    chipEls.push({ chip, val: document.getElementById(`chval-${i}`) });
+  }
+})();
+
+// ============================================================
+// PROGRESS BAR INITIALISATION
+// ============================================================
+const progSegs = [];
+(function initProgress() {
+  STEP_ORDER.forEach((s, i) => {
+    const seg = document.createElement('div');
+    seg.className = 'prog-seg';
+    seg.title = STEP_NAMES[s];
+    dom.wizProgress.appendChild(seg);
+    progSegs.push(seg);
+  });
+})();
+
+// ============================================================
+// DASHBOARD UPDATE (called at ~25 Hz from SSE)
+// ============================================================
+function updateDashboard(data) {
+  // Status bar
+  const conn = data.connected;
+  dom.statusDot.className = 'status-dot ' + (conn ? 'on' : 'off');
+  dom.statusLabel.textContent = conn ? 'Connected' : 'Disconnected';
+  dom.statusFps.textContent = (data.fps || 0).toFixed(1) + ' fps';
+  dom.statusCrc.textContent = (data.crc_errors || 0) + ' CRC errors';
+
+  // Gimbals
+  const gimbals = data.gimbals || [0,0,0,0];
+  for (let i = 0; i < 4; i++) {
+    const v = gimbals[i] || 0;
+    const fill = gimbalEls[i].fill;
+    const RANGE = 500;
+    const pct = Math.max(0, Math.min(100, (v + RANGE) / (2 * RANGE) * 100));
+    const center = 50;
+    let left, width;
+    if (pct >= center) {
+      left = center;
+      width = pct - center;
+    } else {
+      left = pct;
+      width = center - pct;
+    }
+    fill.style.left   = left + '%';
+    fill.style.width  = width + '%';
+    fill.className = 'gimbal-fill' + (wizard.activeGimbalIndex === i ? ' active' : '');
+    gimbalEls[i].val.textContent = v;
+  }
+
+  // Channels
+  const channels = data.channels || [];
+  for (let i = 0; i < 33; i++) {
+    const v = channels[i] !== undefined ? channels[i] : 32768;
+    const el = chipEls[i];
+    el.val.textContent = '0x' + v.toString(16).toUpperCase().padStart(4, '0');
+    // Pulse on significant change
+    if (Math.abs(v - chipPrev[i]) > 1000) {
+      el.chip.classList.add('pulse');
+      setTimeout(() => el.chip.classList.remove('pulse'), 120);
+    }
+    chipPrev[i] = v;
+
+    // Color coding: active detection overrides everything
+    if (wizard.activeChannels && wizard.activeChannels.has(i)) {
+      el.chip.className = 'ch-chip type-active';
+    } else {
+      const type = channelClassCache[i];
+      if (type === 'gimbal')   el.chip.className = 'ch-chip type-gimbal';
+      else if (type === 'switch') el.chip.className = 'ch-chip type-switch';
+      else if (type === 'roller') el.chip.className = 'ch-chip type-roller';
+      else el.chip.className = 'ch-chip';
+    }
+  }
+
+  // Gimbal labels from cal state
+  GIMBAL_LABELS.forEach((lbl, i) => {
+    const g = cal.gimbals[lbl];
+    if (g) {
+      const chanIdx = g.channel;
+      gimbalEls[chanIdx].label.textContent = `G${chanIdx} — ${GIMBAL_NAMES[lbl]}`;
+    }
+  });
+}
+
+// Maps channel index -> 'gimbal'|'switch'|'roller'|null
+const channelClassCache = new Array(33).fill(null);
+
+function applyClassification(classObj) {
+  // classObj from server: {0: 'jittery', 1: 'static', ...}
+  // We only use it for visual hints; actual types come from wizard assignments
+  Object.entries(classObj).forEach(([idx, type]) => {
+    const i = parseInt(idx);
+    if (type === 'jittery' && !channelClassCache[i]) {
+      // don't override assigned channels
+    }
+  });
+}
+
+function markChannelType(idx, type) {
+  channelClassCache[idx] = type;
+}
+
+// ============================================================
+// WIZARD STATE MACHINE
+// ============================================================
+const wizard = {
+  step: 'discovery',
+  substep: 0,
+  baseline: null,
+  gimbals: null,            // baseline gimbals snapshot
+  detecting: false,
+  observedValues: {},       // channel -> Set of values
+  selectedLabel: null,
+  activeChannels: new Set(),
+  activeGimbalIndex: -1,
+  pendingChannel: null,
+  pendingGimbalRange: null, // {min, max, center}
+  pendingPositions: null,   // positions seen so far
+  completedSteps: [],
+  classificationResult: null,
+  latestData: null,
+
+  // Called on every SSE frame
+  onData(data) {
+    this.latestData = data;
+
+    if (this.step === 'discovery') this._onDiscovery(data);
+    else if (this.step === 'gimbal_id') this._onGimbalId(data);
+    else if (this.step === 'gimbal_cal') this._onGimbalCal(data);
+    else if (this.step === 'switches') this._onSwitches(data);
+    else if (this.step === 'rollers') this._onRollers(data);
+    else if (this.step === 'trims') this._onTrims(data);
+    else if (this.step === 'verify') this._onVerify(data);
+  },
+
+  // ---- STEP 1: DISCOVERY ----
+  _discoveryTimer: null,
+  _discoveryDone: false,
+
+  _onDiscovery(data) { /* passive; timer handled in renderStep */ },
+
+  // ---- STEP 2: GIMBAL ID ----
+  _onGimbalId(data) {
+    if (!this.detecting || this.baseline === null) return;
+    const gimbals = data.gimbals || [0,0,0,0];
+    // Build set of already-identified gimbal indices to exclude
+    const usedIndices = new Set();
+    GIMBAL_LABELS.forEach(l => {
+      if (cal.gimbals[l]) usedIndices.add(cal.gimbals[l].channel);
+    });
+    let maxDelta = 0, maxIdx = -1;
+    for (let i = 0; i < 4; i++) {
+      if (usedIndices.has(i)) continue; // skip already-assigned gimbals
+      const delta = Math.abs(gimbals[i] - (this.gimbals[i] || 0));
+      if (delta > maxDelta) { maxDelta = delta; maxIdx = i; }
+    }
+    if (maxDelta > 50) {
+      this.activeGimbalIndex = maxIdx;
+      this.pendingChannel = maxIdx;
+      this._updateGimbalIdDetect(maxIdx, gimbals[maxIdx]);
+    } else {
+      this.activeGimbalIndex = -1;
+      this._updateGimbalIdDetect(-1, 0);
+    }
+  },
+
+  // ---- STEP 3: GIMBAL CAL ----
+  _onGimbalCal(data) {
+    if (!this.detecting || this.baseline === null) return;
+    const gimbals = data.gimbals || [0,0,0,0];
+    const label = GIMBAL_LABELS[this.substep];
+    const g = cal.gimbals[label];
+    if (!g) return;
+    const ch = g.channel;
+    const v = gimbals[ch];
+    if (!this.pendingGimbalRange) {
+      this.pendingGimbalRange = { min: v, max: v, center: v };
+    }
+    const r = this.pendingGimbalRange;
+    if (v < r.min) r.min = v;
+    if (v > r.max) r.max = v;
+    this._updateGimbalCalDisplay(r, v);
+  },
+
+  // ---- STEP 4: SWITCHES ----
+  _onSwitches(data) {
+    if (!this.detecting || this.baseline === null) return;
+    const channels = data.channels || [];
+    const moved = [];
+    for (let i = 0; i < 33; i++) {
+      if (Math.abs((channels[i]||32768) - (this.baseline[i]||32768)) > 1000) {
+        moved.push(i);
+        // Track observed values
+        if (!this.observedValues[i]) this.observedValues[i] = new Set();
+        this.observedValues[i].add(channels[i]);
+      }
+    }
+    // Also add baseline values for tracked channels
+    Object.keys(this.observedValues).forEach(k => {
+      const i = parseInt(k);
+      if (this.baseline[i] !== undefined) this.observedValues[i].add(this.baseline[i]);
+    });
+
+    this.activeChannels = new Set(moved);
+    if (moved.length > 0) {
+      this.pendingChannel = moved[0]; // most recently moved
+      this._updateSwitchDetect(moved, channels);
+    } else {
+      this._updateSwitchDetect([], channels);
+    }
+  },
+
+  // ---- STEP 5: ROLLERS ----
+  _onRollers(data) {
+    if (!this.detecting || this.baseline === null) return;
+    const channels = data.channels || [];
+    const moved = [];
+    for (let i = 0; i < 33; i++) {
+      if (Math.abs((channels[i]||32768) - (this.baseline[i]||32768)) > 200) {
+        moved.push(i);
+        if (!this.observedValues[i]) this.observedValues[i] = new Set();
+        this.observedValues[i].add(channels[i]);
+      }
+    }
+    this.activeChannels = new Set(moved);
+    if (moved.length > 0) {
+      this.pendingChannel = moved[0];
+      this._updateRollerDetect(moved, channels);
+    } else {
+      this._updateRollerDetect([], channels);
+    }
+  },
+
+  // ---- STEP 6: TRIMS ----
+  _onTrims(data) {
+    if (!this.detecting || this.baseline === null) return;
+    const channels = data.channels || [];
+    const moved = [];
+    for (let i = 0; i < 33; i++) {
+      if (Math.abs((channels[i]||32768) - (this.baseline[i]||32768)) > 500) {
+        moved.push(i);
+        if (!this.observedValues[i]) this.observedValues[i] = new Set();
+        this.observedValues[i].add(channels[i]);
+      }
+    }
+    this.activeChannels = new Set(moved);
+    if (moved.length > 0) {
+      this.pendingChannel = moved[0];
+      this._updateTrimDetect(moved, channels);
+    }
+  },
+
+  // ---- STEP 7: VERIFY ----
+  _onVerify(data) {
+    const channels = data.channels || [];
+    const gimbals = data.gimbals || [0,0,0,0];
+    // For each identified gimbal, check if it's moving
+    GIMBAL_LABELS.forEach(lbl => {
+      const g = cal.gimbals[lbl];
+      if (!g) return;
+      const delta = Math.abs(gimbals[g.channel]);
+      const el = document.getElementById(`verify-${lbl}`);
+      if (el) el.className = 'verify-control' + (delta > 100 ? ' verified' : '');
+    });
+    // For each switch
+    Object.keys(cal.switches).forEach(lbl => {
+      const sw = cal.switches[lbl];
+      const v = channels[sw.channel] || 32768;
+      const baseline_v = this.baseline ? (this.baseline[sw.channel] || 32768) : 32768;
+      const el = document.getElementById(`verify-${lbl}`);
+      if (el) el.className = 'verify-control' + (Math.abs(v - baseline_v) > 1000 ? ' verified' : '');
+    });
+  },
+
+  // ============================================================
+  // RENDER ENGINE
+  // ============================================================
+  renderStep() {
+    const idx = STEP_ORDER.indexOf(this.step);
+    dom.wizStepNum.textContent = `STEP ${idx + 1} / 8`;
+    dom.wizStepTitle.textContent = STEP_NAMES[this.step] || this.step;
+
+    // Progress bar
+    progSegs.forEach((seg, i) => {
+      seg.className = 'prog-seg ' + (
+        this.completedSteps.includes(STEP_ORDER[i]) ? 'done' :
+        i === idx ? 'current' : ''
+      );
+    });
+
+    // Completed list
+    dom.completedList.innerHTML = '';
+    this.completedSteps.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'comp-item';
+      d.textContent = STEP_NAMES[s] || s;
+      dom.completedList.appendChild(d);
+    });
+
+    // Body and actions
+    const renders = {
+      discovery:  () => this._renderDiscovery(),
+      gimbal_id:  () => this._renderGimbalId(),
+      gimbal_cal: () => this._renderGimbalCal(),
+      switches:   () => this._renderSwitches(),
+      rollers:    () => this._renderRollers(),
+      trims:      () => this._renderTrims(),
+      verify:     () => this._renderVerify(),
+      save:       () => this._renderSave(),
+    };
+    if (renders[this.step]) renders[this.step]();
+  },
+
+  // ---- RENDER: DISCOVERY ----
+  _renderDiscovery() {
+    dom.wizBody.innerHTML = `
+      <p class="wizard-instruction">
+        <span class="spinner"></span>
+        Scanning channels to classify controls...
+      </p>
+      <div id="discover-status" style="color:var(--text3); font-size:12px; margin-bottom:10px;"></div>
+      <div id="discover-results"></div>
+    `;
+    dom.wizActions.innerHTML = `
+      <button class="wiz-btn btn-secondary" id="btn-back" disabled>Back</button>
+      <button class="wiz-btn btn-primary" id="btn-discover-advance" disabled>Next Step</button>
+    `;
+    document.getElementById('btn-discover-advance').onclick = () => this._completeStep('discovery');
+
+    // Trigger classification after 2s
+    if (!this._discoveryDone) {
+      document.getElementById('discover-status').textContent = 'Collecting data for 2 seconds...';
+      clearTimeout(this._discoveryTimer);
+      this._discoveryTimer = setTimeout(() => this._runClassify(), 2000);
+    } else {
+      this._showClassifyResults(this.classificationResult || {});
+    }
+  },
+
+  _runClassify() {
+    sendCommand({action:'classify'}).then(resp => {
+      if (resp && resp.classification) {
+        this.classificationResult = resp.classification;
+        this._discoveryDone = true;
+        this._showClassifyResults(resp.classification);
+      }
+    });
+  },
+
+  _showClassifyResults(cls) {
+    const status = document.getElementById('discover-status');
+    const results = document.getElementById('discover-results');
+    const spinner = dom.wizBody.querySelector('.spinner');
+    if (status) status.textContent = 'Classification complete.';
+    if (spinner) spinner.style.display = 'none';
+
+    // Count types
+    const counts = {jittery:0, static:0, stepped:0};
+    Object.values(cls).forEach(v => { if (counts[v] !== undefined) counts[v]++; });
+
+    if (results) {
+      results.innerHTML = `
+        <table class="class-table">
+          <thead><tr><th>CH</th><th>Classification</th></tr></thead>
+          <tbody>
+            ${Object.entries(cls).slice(0,20).map(([ch,type]) => `
+              <tr>
+                <td>CH ${ch}</td>
+                <td><span class="badge badge-${type}">${type}</span></td>
+              </tr>
+            `).join('')}
+            ${Object.keys(cls).length > 20 ? `<tr><td colspan="2" style="color:var(--text3)">... and ${Object.keys(cls).length - 20} more</td></tr>` : ''}
+          </tbody>
+        </table>
+        <div style="margin-top:10px; font-size:11px; color:var(--text3)">
+          ${counts.jittery} analog · ${counts.stepped} switched · ${counts.static} static
+        </div>
+      `;
+    }
+    const advBtn = document.getElementById('btn-discover-advance');
+    if (advBtn) advBtn.disabled = false;
+  },
+
+  // ---- RENDER: GIMBAL ID ----
+  _renderGimbalId() {
+    const label = GIMBAL_LABELS[this.substep];
+    const name = GIMBAL_NAMES[label];
+    const instr = GIMBAL_INSTRUCTIONS[label];
+    const completed_ids = GIMBAL_LABELS.filter(l => cal.gimbals[l]);
+
+    dom.wizBody.innerHTML = `
+      <div class="wizard-step-indicator">Gimbal ${this.substep + 1} of 4 — identifying <strong>${name}</strong></div>
+      <p class="wizard-instruction">
+        ${instr} until the responding channel is highlighted below.
+      </p>
+      <div class="detect-area" id="gimbal-detect">
+        <span class="detect-label">Responding gimbal:</span>
+        <span class="detect-channel" id="gid-channel">—</span>
+        <span class="detect-value" id="gid-value"></span>
+      </div>
+      ${completed_ids.length > 0 ? `
+        <div style="margin-top:8px; font-size:11px; color:var(--text3)">
+          Identified: ${completed_ids.map(l => `<strong>${GIMBAL_NAMES[l]}</strong> → G${cal.gimbals[l].channel}`).join(', ')}
+        </div>` : ''}
+    `;
+
+    dom.wizActions.innerHTML = `
+      <button class="wiz-btn btn-secondary" id="btn-back">Back</button>
+      <button class="wiz-btn btn-secondary" id="btn-gid-skip">Skip</button>
+      <button class="wiz-btn btn-primary" id="btn-gid-confirm" disabled>Confirm as ${name.toUpperCase()}</button>
+    `;
+
+    document.getElementById('btn-back').onclick = () => this._goBack();
+    document.getElementById('btn-gid-skip').onclick = () => this._gimbalIdSkip();
+    document.getElementById('btn-gid-confirm').onclick = () => this._gimbalIdConfirm();
+
+    // Start baseline capture
+    this._captureBaseline();
+    this.detecting = true;
+    this.pendingChannel = null;
+  },
+
+  _updateGimbalIdDetect(idx, value) {
+    const chEl = document.getElementById('gid-channel');
+    const vEl  = document.getElementById('gid-value');
+    const confirmBtn = document.getElementById('btn-gid-confirm');
+    if (!chEl) return;
+    if (idx >= 0) {
+      chEl.textContent = `G${idx}`;
+      if (vEl) vEl.textContent = `value: ${value}`;
+      if (confirmBtn) confirmBtn.disabled = false;
+    } else {
+      chEl.textContent = '—';
+      if (vEl) vEl.textContent = '';
+    }
+  },
+
+  _gimbalIdConfirm() {
+    if (this.pendingChannel === null) return;
+    const label = GIMBAL_LABELS[this.substep];
+    sendCommand({
+      action: 'set_gimbal',
+      label,
+      channel: this.pendingChannel,
+      min: 0, center: 0, max: 0,
+    }).then(resp => {
+      if (resp && resp.ok) {
+        cal.gimbals[label] = { channel: this.pendingChannel, min: 0, center: 0, max: 0 };
+        markChannelType(this.pendingChannel, 'gimbal');
+        this.activeGimbalIndex = -1;
+        if (this.substep < 3) {
+          this.substep++;
+          this.renderStep();
+        } else {
+          this._completeStep('gimbal_id');
+        }
+      }
+    });
+  },
+
+  _gimbalIdSkip() {
+    if (this.substep < 3) {
+      this.substep++;
+      this.renderStep();
+    } else {
+      this._completeStep('gimbal_id');
+    }
+  },
+
+  // ---- RENDER: GIMBAL CAL ----
+  _renderGimbalCal() {
+    const label = GIMBAL_LABELS[this.substep];
+    const name  = GIMBAL_NAMES[label];
+    const g = cal.gimbals[label];
+    const chText = g ? `G${g.channel}` : '?';
+
+    dom.wizBody.innerHTML = `
+      <div class="wizard-step-indicator">Calibrating ${this.substep + 1} of 4 — <strong>${name}</strong> (${chText})</div>
+      <p class="wizard-instruction">
+        Push the <span class="wizard-highlight">${name.toUpperCase()}</span> stick to its full extent
+        in both directions, then release to center.
+      </p>
+      <div class="detect-area" id="gcal-detect" style="flex-direction:column; align-items:stretch;">
+        <div class="range-label">
+          <span id="gcal-min">min: —</span>
+          <span id="gcal-cur">current: —</span>
+          <span id="gcal-max">max: —</span>
+        </div>
+        <div class="range-track">
+          <div class="range-fill" id="gcal-fill" style="left:50%; width:0;"></div>
+        </div>
+        <div style="font-size:11px; color:var(--text3); margin-top:4px;">
+          Range: <span id="gcal-range">0</span> / 400 needed
+        </div>
+      </div>
+    `;
+
+    dom.wizActions.innerHTML = `
+      <button class="wiz-btn btn-secondary" id="btn-back">Back</button>
+      <button class="wiz-btn btn-secondary" id="btn-gcal-skip">Skip</button>
+      <button class="wiz-btn btn-primary" id="btn-gcal-confirm" disabled>Confirm ${name}</button>
+    `;
+
+    document.getElementById('btn-back').onclick = () => this._goBack();
+    document.getElementById('btn-gcal-skip').onclick = () => this._gimbalCalSkip();
+    document.getElementById('btn-gcal-confirm').onclick = () => this._gimbalCalConfirm();
+
+    this._captureBaseline();
+    this.detecting = true;
+    this.pendingGimbalRange = null;
+
+    if (!g) {
+      // No gimbal identified for this label — skip
+      dom.wizBody.innerHTML += `<p style="color:var(--orange); font-size:12px; margin-top:8px;">No channel identified for ${name}. Skipping.</p>`;
+      setTimeout(() => this._gimbalCalSkip(), 1000);
+    }
+  },
+
+  _updateGimbalCalDisplay(range, current) {
+    const minEl    = document.getElementById('gcal-min');
+    const maxEl    = document.getElementById('gcal-max');
+    const curEl    = document.getElementById('gcal-cur');
+    const fillEl   = document.getElementById('gcal-fill');
+    const rangeEl  = document.getElementById('gcal-range');
+    const confirmBtn = document.getElementById('btn-gcal-confirm');
+    if (!minEl) return;
+
+    minEl.textContent  = `min: ${range.min}`;
+    maxEl.textContent  = `max: ${range.max}`;
+    curEl.textContent  = `current: ${current}`;
+
+    const span = range.max - range.min;
+    const FULL = 1000; // expected full range for display
+    const fillPct = Math.min(100, (span / FULL) * 100);
+    const center50 = 50 + (((range.min + range.max) / 2) / FULL * 50);
+    const half = fillPct / 2;
+    if (fillEl) {
+      fillEl.style.left  = Math.max(0, 50 - half) + '%';
+      fillEl.style.width = Math.min(100, fillPct) + '%';
+    }
+    if (rangeEl) rangeEl.textContent = span;
+    if (confirmBtn) confirmBtn.disabled = span < 400;
+  },
+
+  _gimbalCalConfirm() {
+    const label = GIMBAL_LABELS[this.substep];
+    const g = cal.gimbals[label];
+    if (!g || !this.pendingGimbalRange) return;
+    const r = this.pendingGimbalRange;
+    const center = r.center || 0;
+    sendCommand({
+      action: 'set_gimbal',
+      label,
+      channel: g.channel,
+      min: r.min,
+      center,
+      max: r.max,
+    }).then(resp => {
+      if (resp && resp.ok) {
+        cal.gimbals[label] = { ...g, min: r.min, center, max: r.max };
+        this.detecting = false;
+        if (this.substep < 3) {
+          this.substep++;
+          this.renderStep();
+        } else {
+          this._completeStep('gimbal_cal');
+        }
+      }
+    });
+  },
+
+  _gimbalCalSkip() {
+    this.detecting = false;
+    if (this.substep < 3) {
+      this.substep++;
+      this.renderStep();
+    } else {
+      this._completeStep('gimbal_cal');
+    }
+  },
+
+  // ---- RENDER: SWITCHES ----
+  _renderSwitches() {
+    const identified = Object.keys(cal.switches);
+    dom.wizBody.innerHTML = `
+      <p class="wizard-instruction">
+        Flip <span class="wizard-highlight">ANY switch</span> to a different position.
+        The responding channel will be highlighted.
+      </p>
+      <div class="detect-area" id="sw-detect">
+        <span class="detect-label">Detected channel:</span>
+        <span class="detect-channel" id="sw-channel">—</span>
+        <span class="detect-value" id="sw-positions"></span>
+      </div>
+      <div style="margin-bottom:8px; font-size:12px; color:var(--text2);">Label this switch as:</div>
+      <div class="label-grid" id="sw-label-grid">
+        ${SWITCH_LABELS.map(l => `<button class="label-btn" data-label="${l}">${l}</button>`).join('')}
+      </div>
+      ${identified.length > 0 ? `
+        <div style="margin-top:10px; font-size:11px; color:var(--text3);">
+          Identified: ${identified.map(l => `<strong>${l}</strong>`).join(', ')}
+        </div>` : ''}
+    `;
+
+    dom.wizActions.innerHTML = `
+      <button class="wiz-btn btn-secondary" id="btn-back">Back</button>
+      <button class="wiz-btn btn-secondary" id="btn-sw-done">Done with Switches</button>
+      <button class="wiz-btn btn-primary" id="btn-sw-confirm" disabled>Confirm Switch</button>
+    `;
+
+    document.getElementById('btn-back').onclick = () => this._goBack();
+    document.getElementById('btn-sw-done').onclick = () => this._completeStep('switches');
+    document.getElementById('btn-sw-confirm').onclick = () => this._switchConfirm();
+
+    // Label button selection
+    document.querySelectorAll('#sw-label-grid .label-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('#sw-label-grid .label-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        this.selectedLabel = btn.dataset.label;
+        this._updateSwitchConfirmBtn();
+      };
+    });
+
+    this._captureBaseline();
+    this.detecting = true;
+    this.pendingChannel = null;
+    this.observedValues = {};
+    this.activeChannels = new Set();
+  },
+
+  _updateSwitchDetect(moved, channels) {
+    const chEl = document.getElementById('sw-channel');
+    const posEl = document.getElementById('sw-positions');
+    if (!chEl) return;
+    if (moved.length > 0) {
+      const ch = moved[0];
+      chEl.textContent = `CH ${ch}`;
+      this.pendingChannel = ch;
+      if (posEl && this.observedValues[ch]) {
+        const vals = [...this.observedValues[ch]];
+        posEl.innerHTML = `
+          <div style="font-size:11px; color:var(--text3);">${vals.length} position(s) seen:</div>
+          <div class="pos-chips">
+            ${vals.map(v => `<span class="pos-chip">0x${v.toString(16).toUpperCase().padStart(4,'0')}</span>`).join('')}
+          </div>
+        `;
+      }
+    } else {
+      if (this.pendingChannel === null) chEl.textContent = '—';
+    }
+    this._updateSwitchConfirmBtn();
+  },
+
+  _updateSwitchConfirmBtn() {
+    const btn = document.getElementById('btn-sw-confirm');
+    if (btn) btn.disabled = !(this.pendingChannel !== null && this.selectedLabel);
+  },
+
+  _switchConfirm() {
+    if (this.pendingChannel === null || !this.selectedLabel) return;
+    const ch = this.pendingChannel;
+    const label = this.selectedLabel;
+    const vals = this.observedValues[ch] ? [...this.observedValues[ch]] : [32768];
+    sendCommand({
+      action: 'set_switch',
+      label,
+      channel: ch,
+      positions: vals,
+    }).then(resp => {
+      if (resp && resp.ok) {
+        cal.switches[label] = { channel: ch, positions: vals };
+        markChannelType(ch, 'switch');
+        // Reset for next switch
+        this.pendingChannel = null;
+        this.selectedLabel = null;
+        this.observedValues = {};
+        this.activeChannels = new Set();
+        this._captureBaseline();
+        this._renderSwitches();
+      }
+    });
+  },
+
+  // ---- RENDER: ROLLERS ----
+  _renderRollers() {
+    const identified = Object.keys(cal.rollers).concat(cal.selector_6pos && cal.selector_6pos.channel !== undefined ? ['6-Pos Selector'] : []);
+    const ROLLER_LABELS = ['Roller-Detent','Roller-Smooth','6-Pos Selector'];
+
+    dom.wizBody.innerHTML = `
+      <p class="wizard-instruction">
+        Move <span class="wizard-highlight">ANY roller</span> or turn the
+        <span class="wizard-highlight">6-position selector</span>.
+      </p>
+      <div class="detect-area" id="roller-detect">
+        <span class="detect-label">Detected channel:</span>
+        <span class="detect-channel" id="roller-channel">—</span>
+        <span class="detect-value" id="roller-value"></span>
+      </div>
+      <div style="margin-bottom:8px; font-size:12px; color:var(--text2);">Label this control as:</div>
+      <div class="label-grid" id="roller-label-grid">
+        ${ROLLER_LABELS.map(l => `<button class="label-btn" data-label="${l}">${l}</button>`).join('')}
+      </div>
+      <div id="roller-range-display" style="margin-top:10px; display:none;">
+        <div class="range-label">
+          <span id="roller-min">min: —</span>
+          <span id="roller-max">max: —</span>
+        </div>
+        <div class="range-track"><div class="range-fill" id="roller-fill" style="left:0; width:0;"></div></div>
+      </div>
+      ${identified.length > 0 ? `
+        <div style="margin-top:10px; font-size:11px; color:var(--text3);">
+          Identified: ${identified.join(', ')}
+        </div>` : ''}
+    `;
+
+    dom.wizActions.innerHTML = `
+      <button class="wiz-btn btn-secondary" id="btn-back">Back</button>
+      <button class="wiz-btn btn-secondary" id="btn-roller-done">Done</button>
+      <button class="wiz-btn btn-primary" id="btn-roller-confirm" disabled>Confirm</button>
+    `;
+
+    document.getElementById('btn-back').onclick = () => this._goBack();
+    document.getElementById('btn-roller-done').onclick = () => this._completeStep('rollers');
+    document.getElementById('btn-roller-confirm').onclick = () => this._rollerConfirm();
+
+    document.querySelectorAll('#roller-label-grid .label-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('#roller-label-grid .label-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        this.selectedLabel = btn.dataset.label;
+        const confirmBtn = document.getElementById('btn-roller-confirm');
+        if (confirmBtn) confirmBtn.disabled = !(this.pendingChannel !== null);
+      };
+    });
+
+    this._captureBaseline();
+    this.detecting = true;
+    this.pendingChannel = null;
+    this.observedValues = {};
+    this.activeChannels = new Set();
+    this.pendingGimbalRange = null;
+  },
+
+  _updateRollerDetect(moved, channels) {
+    const chEl  = document.getElementById('roller-channel');
+    const valEl = document.getElementById('roller-value');
+    if (!chEl) return;
+    if (moved.length > 0) {
+      const ch = moved[0];
+      chEl.textContent = `CH ${ch}`;
+      this.pendingChannel = ch;
+      if (valEl) valEl.textContent = `0x${(channels[ch]||32768).toString(16).toUpperCase().padStart(4,'0')}`;
+
+      // Track range for display
+      if (!this.pendingGimbalRange) this.pendingGimbalRange = { min: channels[ch], max: channels[ch] };
+      const r = this.pendingGimbalRange;
+      const v = channels[ch] || 32768;
+      if (v < r.min) r.min = v;
+      if (v > r.max) r.max = v;
+
+      const rangeEl = document.getElementById('roller-range-display');
+      if (rangeEl) rangeEl.style.display = 'block';
+      const minEl = document.getElementById('roller-min');
+      const maxEl = document.getElementById('roller-max');
+      const fillEl = document.getElementById('roller-fill');
+      if (minEl) minEl.textContent = `min: ${r.min}`;
+      if (maxEl) maxEl.textContent = `max: ${r.max}`;
+      if (fillEl) {
+        const pct = ((r.max - r.min) / 65535) * 100;
+        fillEl.style.left  = (r.min / 65535 * 100) + '%';
+        fillEl.style.width = pct + '%';
+      }
+
+      const confirmBtn = document.getElementById('btn-roller-confirm');
+      if (confirmBtn) confirmBtn.disabled = !this.selectedLabel;
+    }
+  },
+
+  _rollerConfirm() {
+    if (this.pendingChannel === null || !this.selectedLabel) return;
+    const ch = this.pendingChannel;
+    const label = this.selectedLabel;
+    const vals = this.observedValues[ch] ? [...this.observedValues[ch]] : [];
+    const minV = vals.length ? Math.min(...vals) : 0;
+    const maxV = vals.length ? Math.max(...vals) : 65535;
+
+    if (label === '6-Pos Selector') {
+      sendCommand({
+        action: 'set_selector',
+        channel: ch,
+        values: vals,
+      }).then(resp => {
+        if (resp && resp.ok) {
+          cal.selector_6pos = { channel: ch, values: vals };
+          markChannelType(ch, 'roller');
+          this.pendingChannel = null;
+          this.selectedLabel = null;
+          this.observedValues = {};
+          this.pendingGimbalRange = null;
+          this._captureBaseline();
+          this._renderRollers();
+        }
+      });
+    } else {
+      const hasDetent = label === 'Roller-Detent';
+      sendCommand({
+        action: 'set_roller',
+        label,
+        channel: ch,
+        min: minV, max: maxV,
+        has_detent: hasDetent,
+      }).then(resp => {
+        if (resp && resp.ok) {
+          cal.rollers[label] = { channel: ch, min: minV, max: maxV };
+          markChannelType(ch, 'roller');
+          this.pendingChannel = null;
+          this.selectedLabel = null;
+          this.observedValues = {};
+          this.pendingGimbalRange = null;
+          this._captureBaseline();
+          this._renderRollers();
+        }
+      });
+    }
+  },
+
+  // ---- RENDER: TRIMS ----
+  _renderTrims() {
+    dom.wizBody.innerHTML = `
+      <p class="wizard-instruction">
+        Press <span class="wizard-highlight">any trim button</span> and release.
+        The tool will detect momentary channel changes.
+      </p>
+      <div class="detect-area" id="trim-detect">
+        <span class="detect-label">Detected channel:</span>
+        <span class="detect-channel" id="trim-channel">—</span>
+        <span class="detect-value" id="trim-value"></span>
+      </div>
+      <div style="margin-top:8px; font-size:11px; color:var(--text3);">
+        This step is optional. Use "Skip" if your radio has no trims or you want to skip.
+      </div>
+      <div id="trim-identified" style="margin-top:8px; font-size:11px; color:var(--text3);"></div>
+    `;
+
+    dom.wizActions.innerHTML = `
+      <button class="wiz-btn btn-secondary" id="btn-back">Back</button>
+      <button class="wiz-btn btn-warn" id="btn-trim-skip">Skip This Step</button>
+      <button class="wiz-btn btn-secondary" id="btn-trim-done">Done</button>
+    `;
+
+    document.getElementById('btn-back').onclick = () => this._goBack();
+    document.getElementById('btn-trim-skip').onclick = () => this._completeStep('trims');
+    document.getElementById('btn-trim-done').onclick = () => this._completeStep('trims');
+
+    this._captureBaseline();
+    this.detecting = true;
+    this.pendingChannel = null;
+    this.observedValues = {};
+    this.activeChannels = new Set();
+  },
+
+  _updateTrimDetect(moved, channels) {
+    const chEl  = document.getElementById('trim-channel');
+    const valEl = document.getElementById('trim-value');
+    if (!chEl) return;
+    if (moved.length > 0) {
+      const ch = moved[0];
+      chEl.textContent = `CH ${ch}`;
+      if (valEl) valEl.textContent = `0x${(channels[ch]||32768).toString(16).toUpperCase().padStart(4,'0')}`;
+      const idEl = document.getElementById('trim-identified');
+      if (idEl) {
+        const count = Object.keys(this.observedValues).length;
+        idEl.textContent = `${count} trim channel(s) detected so far.`;
+      }
+    }
+  },
+
+  // ---- RENDER: VERIFY ----
+  _renderVerify() {
+    const allControls = [
+      ...GIMBAL_LABELS.filter(l => cal.gimbals[l]).map(l => ({ type:'gimbal', label:l, ch: cal.gimbals[l].channel })),
+      ...Object.keys(cal.switches).map(l => ({ type:'switch', label:l, ch: cal.switches[l].channel })),
+      ...Object.keys(cal.rollers).map(l => ({ type:'roller', label:l, ch: cal.rollers[l].channel })),
+      ...(cal.selector_6pos && cal.selector_6pos.channel !== undefined ? [{ type:'selector', label:'6-Pos Selector', ch: cal.selector_6pos.channel }] : []),
+    ];
+
+    dom.wizBody.innerHTML = `
+      <p class="wizard-instruction">
+        <span class="wizard-highlight">Wiggle everything!</span>
+        Each control will flash green when it moves, confirming the mapping is correct.
+      </p>
+      <div id="verify-controls">
+        ${allControls.map(ctrl => `
+          <div class="verify-control" id="verify-${ctrl.label}">
+            <span class="verify-label">${ctrl.label}</span>
+            <span class="verify-ch">CH ${ctrl.ch}</span>
+            <span class="verify-status">${ctrl.type}</span>
+          </div>
+        `).join('')}
+        ${allControls.length === 0 ? '<p style="color:var(--text3); font-size:12px;">No controls identified. Go back and run earlier steps.</p>' : ''}
+      </div>
+      <div class="redo-grid" id="redo-grid">
+        ${['gimbal_id','gimbal_cal','switches','rollers'].map(s => `
+          <button class="wiz-btn btn-secondary" style="font-size:11px;" data-redo="${s}">Re-do ${STEP_NAMES[s]}</button>
+        `).join('')}
+      </div>
+    `;
+
+    dom.wizActions.innerHTML = `
+      <button class="wiz-btn btn-secondary" id="btn-back">Back</button>
+      <button class="wiz-btn btn-green" id="btn-verify-ok">Looks Good — Save</button>
+    `;
+
+    document.getElementById('btn-back').onclick = () => this._goBack();
+    document.getElementById('btn-verify-ok').onclick = () => this._completeStep('verify');
+
+    document.querySelectorAll('#redo-grid [data-redo]').forEach(btn => {
+      btn.onclick = () => {
+        const target = btn.dataset.redo;
+        this.step = target;
+        this.substep = 0;
+        this.completedSteps = this.completedSteps.filter(s => {
+          const tidx = STEP_ORDER.indexOf(target);
+          return STEP_ORDER.indexOf(s) < tidx;
+        });
+        this.detecting = false;
+        this.activeChannels = new Set();
+        this.renderStep();
+      };
+    });
+
+    this._captureBaseline();
+    this.detecting = false; // re-enable per-control in onVerify via data
+  },
+
+  // ---- RENDER: SAVE ----
+  _renderSave() {
+    const allMappings = [
+      ...Object.entries(cal.gimbals).map(([l,g]) => ({ label:l, type:'Gimbal', ch:g.channel, detail:`min:${g.min} ctr:${g.center} max:${g.max}` })),
+      ...Object.entries(cal.switches).map(([l,s]) => ({ label:l, type:'Switch', ch:s.channel, detail:`${(s.positions||[]).length} pos` })),
+      ...Object.entries(cal.rollers).map(([l,r]) => ({ label:l, type:'Roller', ch:r.channel, detail:`${r.min}–${r.max}` })),
+      ...(cal.selector_6pos && cal.selector_6pos.channel !== undefined ? [{
+        label:'6-Pos Selector', type:'Selector', ch:cal.selector_6pos.channel, detail:`${(cal.selector_6pos.values||[]).length} steps`
+      }] : []),
+    ];
+
+    dom.wizBody.innerHTML = `
+      <p class="wizard-instruction">
+        Calibration complete! Review your mappings and save.
+      </p>
+      <table class="summary-table">
+        <thead><tr><th>Label</th><th>Type</th><th>Channel</th><th>Detail</th></tr></thead>
+        <tbody>
+          ${allMappings.map(m => `
+            <tr>
+              <td>${m.label}</td>
+              <td>${m.type}</td>
+              <td>CH ${m.ch}</td>
+              <td>${m.detail}</td>
+            </tr>
+          `).join('')}
+          ${allMappings.length === 0 ? '<tr><td colspan="4" style="color:var(--text3);">No mappings recorded.</td></tr>' : ''}
+        </tbody>
+      </table>
+      <div class="save-success" id="save-success">
+        Configuration saved. File path shown in server console.
+      </div>
+    `;
+
+    dom.wizActions.innerHTML = `
+      <button class="wiz-btn btn-secondary" id="btn-back">Back</button>
+      <button class="wiz-btn btn-danger" id="btn-start-over">Start Over</button>
+      <button class="wiz-btn btn-green" id="btn-save">Save Configuration</button>
+    `;
+
+    document.getElementById('btn-back').onclick = () => this._goBack();
+    document.getElementById('btn-save').onclick = () => this._doSave();
+    document.getElementById('btn-start-over').onclick = () => this._doReset();
+  },
+
+  _doSave() {
+    fetch('/api/save', { method: 'POST' })
+      .then(r => r.json())
+      .then(resp => {
+        if (resp.ok) {
+          const el = document.getElementById('save-success');
+          if (el) {
+            el.className = 'save-success visible';
+            el.textContent = `Saved to: ${resp.path || '~/ax12-research/calibration.json'}`;
+          }
+          const btn = document.getElementById('btn-save');
+          if (btn) { btn.textContent = 'Saved!'; btn.disabled = true; }
+        }
+      })
+      .catch(err => console.error('Save error:', err));
+  },
+
+  _doReset() {
+    if (!confirm('Reset all calibration data? This cannot be undone.')) return;
+    sendCommand({ action: 'reset' }).then(resp => {
+      if (resp && resp.ok) {
+        // Reset client state
+        Object.keys(cal.gimbals).forEach(k => delete cal.gimbals[k]);
+        Object.keys(cal.switches).forEach(k => delete cal.switches[k]);
+        Object.keys(cal.rollers).forEach(k => delete cal.rollers[k]);
+        cal.selector_6pos = {};
+        cal.trims = {};
+        cal.buttons = {};
+        channelClassCache.fill(null);
+        GIMBAL_LABELS.forEach((l, i) => {
+          gimbalEls[i].label.textContent = `G${i} — ?`;
+        });
+        wizard.step = 'discovery';
+        wizard.substep = 0;
+        wizard.completedSteps = [];
+        wizard.detecting = false;
+        wizard._discoveryDone = false;
+        wizard.classificationResult = null;
+        wizard.activeChannels = new Set();
+        wizard.activeGimbalIndex = -1;
+        wizard.renderStep();
+      }
+    });
+  },
+
+  // ============================================================
+  // STEP MANAGEMENT HELPERS
+  // ============================================================
+  _completeStep(stepName) {
+    sendCommand({ action: 'complete_step', step: stepName }).then(resp => {
+      if (resp && resp.ok) {
+        if (!this.completedSteps.includes(stepName)) this.completedSteps.push(stepName);
+        const nextIdx = STEP_ORDER.indexOf(stepName) + 1;
+        this.step = nextIdx < STEP_ORDER.length ? STEP_ORDER[nextIdx] : stepName;
+        this.substep = 0;
+        this.detecting = false;
+        this.activeChannels = new Set();
+        this.activeGimbalIndex = -1;
+        this.baseline = null;
+        this.renderStep();
+      }
+    });
+  },
+
+  _goBack() {
+    sendCommand({ action: 'back' }).then(resp => {
+      if (resp && resp.ok && resp.state) {
+        const prevStep = resp.state.current_step;
+        this.step = prevStep;
+        this.substep = 0;
+        this.detecting = false;
+        this.activeChannels = new Set();
+        this.activeGimbalIndex = -1;
+        this.baseline = null;
+        this.completedSteps = resp.state.completed_steps || [];
+        this.renderStep();
+      }
+    });
+  },
+
+  _captureBaseline() {
+    if (this.latestData) {
+      this.baseline = [...(this.latestData.channels || new Array(33).fill(32768))];
+      this.gimbals  = [...(this.latestData.gimbals  || [0,0,0,0])];
+    } else {
+      this.baseline = new Array(33).fill(32768);
+      this.gimbals  = [0,0,0,0];
+    }
+  },
+
+  // Load state from server response
+  loadFromState(state) {
+    this.step = state.current_step || 'discovery';
+    this.completedSteps = state.completed_steps || [];
+    if (state.gimbals) Object.assign(cal.gimbals, state.gimbals);
+    if (state.switches) Object.assign(cal.switches, state.switches);
+    if (state.rollers) Object.assign(cal.rollers, state.rollers);
+    if (state.selector_6pos) Object.assign(cal.selector_6pos, state.selector_6pos);
+    if (state.trims) Object.assign(cal.trims, state.trims);
+    if (state.buttons) Object.assign(cal.buttons, state.buttons);
+    // Rebuild channel class cache from loaded mappings
+    GIMBAL_LABELS.forEach(l => {
+      if (cal.gimbals[l]) markChannelType(cal.gimbals[l].channel, 'gimbal');
+    });
+    Object.values(cal.switches).forEach(s => markChannelType(s.channel, 'switch'));
+    Object.values(cal.rollers).forEach(r => markChannelType(r.channel, 'roller'));
+    if (cal.selector_6pos && cal.selector_6pos.channel !== undefined) {
+      markChannelType(cal.selector_6pos.channel, 'roller');
+    }
+  },
+};
+
+// ============================================================
+// API HELPERS
+// ============================================================
+function sendCommand(cmd) {
+  return fetch('/api/command', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmd),
+  })
+    .then(r => r.json())
+    .catch(err => { console.error('Command error:', err); return null; });
+}
+
+// ============================================================
+// RESET BUTTON
+// ============================================================
+dom.btnReset.onclick = () => wizard._doReset();
+
+// ============================================================
+// SSE CONNECTION
+// ============================================================
+let sse = null;
+let sseRetryCount = 0;
+
+// Median-of-3 noise filter — keeps a 3-frame history per channel,
+// returns the median value to suppress single-frame spikes.
+const _filterHistory = {};
+function medianFilter(values) {
+  if (!values || !values.length) return values;
+  const key = values.length; // separate histories by array length (gimbals vs channels)
+  if (!_filterHistory[key]) _filterHistory[key] = values.map(() => []);
+  const hist = _filterHistory[key];
+  return values.map((v, i) => {
+    if (!hist[i]) hist[i] = [];
+    hist[i].push(v);
+    if (hist[i].length > 3) hist[i].shift();
+    if (hist[i].length < 3) return v; // not enough history yet
+    const sorted = [...hist[i]].sort((a, b) => a - b);
+    return sorted[1]; // median
+  });
+}
+
+function connectSSE() {
+  if (sse) { try { sse.close(); } catch(e) {} }
+  sse = new EventSource('/stream');
+
+  sse.onmessage = (e) => {
+    sseRetryCount = 0;
+    let data;
+    try { data = JSON.parse(e.data); } catch(err) { return; }
+    // Median-of-3 filter to suppress single-frame noise spikes
+    data.gimbals = medianFilter(data.gimbals);
+    data.channels = medianFilter(data.channels);
+    updateDashboard(data);
+    wizard.onData(data);
+  };
+
+  sse.onerror = () => {
+    dom.statusDot.className = 'status-dot off';
+    dom.statusLabel.textContent = 'Disconnected';
+    sseRetryCount++;
+    // EventSource auto-reconnects; on reconnect re-fetch state
+  };
+
+  sse.onopen = () => {
+    if (sseRetryCount > 0) {
+      // Reconnected — re-sync state from server
+      fetch('/api/state')
+        .then(r => r.json())
+        .then(state => {
+          wizard.loadFromState(state);
+          wizard.renderStep();
+        })
+        .catch(() => {});
+    }
+  };
+}
+
+// ============================================================
+// INITIAL LOAD
+// ============================================================
+fetch('/api/state')
+  .then(r => r.json())
+  .then(state => {
+    wizard.loadFromState(state);
+    wizard.renderStep();
+    connectSSE();
+  })
+  .catch(() => {
+    // State fetch failed (server may not be up) — still try to connect SSE
+    wizard.renderStep();
+    connectSSE();
+  });
+</script>
+</body>
+</html>
