@@ -34,3 +34,12 @@ tools/SensorReader*
 tools/sensor_reader
 tools/oat/
 data/model-backup-*/
+
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*_secret
+*_token
