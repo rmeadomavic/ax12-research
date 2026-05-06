@@ -653,3 +653,11 @@ This is NOT practical without significant PCB modification and is listed for com
 | FPV simulators | Run on device with frame drops (GPU ~7 year old phone class). Gimbal-to-Android via Bluetooth has ~1 second latency — nearly unflyable for FPV practice. | Oscar Liang review |
 | RadioMasterOS | Android app replacing EdgeTX. Modern UI, model profiles, channel monitor, telemetry, ELRS integration, Lua scripts. First-generation, not as mature as EdgeTX. | Oscar Liang review |
 | Price | $249.99 USD | Oscar Liang review |
+
+## External References
+
+### 3D scan
+
+Physical scan of the AX12 transmitter — useful for custom enclosures, mount design, accessory CAD, and dimensional reference.
+
+- [AX12 transmitter scan on Thingiverse](https://www.thingiverse.com/thing:7347916) — scan by LNDSQD
