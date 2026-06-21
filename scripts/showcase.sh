@@ -15,12 +15,12 @@ pkill -f 'demo_server.py' 2>/dev/null
 nohup $PY ~/ax12-research/tools/demo_server.py --port 8082 > /dev/null 2>&1 &
 echo "  -> http://100.87.134.108:8082"
 
-# 2. Start GPS
-echo "[2/5] Starting GPS..."
+# 2. Network location (NOT GNSS — no GPS antenna populated)
+echo "[2/5] Reading network location (no GNSS antenna on board)..."
 su 0 am start -n com.mediatek.ygps/.YgpsActivity > /dev/null 2>&1
 sleep 1
 POS=$($PY ~/ax12-research/tools/gps_tool.py position 2>/dev/null | grep Latitude)
-echo "  -> $POS"
+echo "  -> $POS (WiFi/network, not a satellite fix)"
 
 # 3. Check WiFi
 echo "[3/5] Network status..."
@@ -35,7 +35,7 @@ echo "  Web Dashboard:     http://100.87.134.108:8082"
 echo "  Calibrator:        http://100.87.134.108:8080"
 echo "  DOOM:              bash scripts/doom-demo.sh"
 echo "  Tactical tools:   github.com/rmeadomavic/ax12-tac-tools"
-echo "  GPS Position:      python3 tools/gps_tool.py position"
+echo "  Net Location:      python3 tools/gps_tool.py position  (network, no GNSS)"
 echo "  Model Backup:      su 0 $PY tools/model_tool.py list"
 echo "  Meshtastic:        (open app on device)"
 echo "  Lua Scripts:       (RadioMaster app > Lua Scripts > Tools)"

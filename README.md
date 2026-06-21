@@ -33,7 +33,7 @@ The Android side runs Flyshark, a Qt6/QML application with an embedded Lua 5.3 V
 
 **Factory root.** Ships with SUID `su`, `userdebug` build, SELinux permissive. No exploit needed. [Root guide →](docs/guides/root-guide.md)
 
-**Undocumented hardware.** GPS receiver (MT6631, confirmed), FM tuner, HDMI video input via RN6752M, IMU (ICM-42607, driver broken in current firmware), USB OTG support in sysfs, dormant LTE baseband with no SIM slot. None of it is exposed by the stock UI. [Hardware map →](docs/hardware/hardware-map.md)
+**Undocumented hardware.** FM tuner (MT6631, functional), HDMI video input via RN6752M, IMU (ICM-42607, driver broken in current firmware), USB OTG support in sysfs, dormant LTE baseband with no SIM slot. The MT6631 also carries a GNSS core and the GPS software stack runs — but **no antenna is populated**, so it acquires zero satellites and is unusable without a hardware mod (see hardware map). None of it is exposed by the stock UI. [Hardware map →](docs/hardware/hardware-map.md)
 
 **25MB native library analyzed.** 13,000+ dynamic symbols. Three communication transports (UART, TCP, USB-HID), Lua 5.3 VM with LVGL bindings, ground control station with offline maps. Analysis via strings/readelf — no decompilation. [Analysis →](docs/software/native-lib-analysis.md)
 
@@ -95,7 +95,7 @@ On a rooted AX12, see the [Capture Session Guide](docs/guides/capture-session-gu
 | `simulator.py` | Synthetic traffic generator |
 | `system_test.py` | Automated diagnostic suite |
 | `fm_radio.py` | FM radio control |
-| `gps_tool.py` | GPS position reader |
+| `gps_tool.py` | Location reader (Android network/fused position — GNSS unusable, no antenna populated) |
 
 Full list: [`tools/README.md`](tools/README.md)
 

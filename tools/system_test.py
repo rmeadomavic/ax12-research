@@ -84,7 +84,12 @@ def test_flyshark_running():
 
 
 def test_gps_location():
-    """Test 5: GPS location service has coordinates."""
+    """Test 5: Location service returns coordinates (network/fused — NOT GNSS).
+
+    Note: the AX12 has no GPS antenna populated, so any coordinates here come
+    from Android's WiFi/network providers, not a satellite fix. See
+    docs/hardware/hardware-map.md.
+    """
     rc, out, err = run_cmd('su 0 dumpsys location')
     if rc != 0:
         return FAIL, 'dumpsys location failed'

@@ -22,7 +22,7 @@ ssh ax12
 # 20-point system diagnostic
 python3 ~/ax12-research/tools/system_test.py
 
-# GPS position with Google Maps link
+# Network location (NOT GNSS — no GPS antenna populated, zero satellites)
 python3 ~/ax12-research/tools/gps_tool.py position
 
 # List radio models

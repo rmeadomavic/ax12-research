@@ -66,19 +66,21 @@ ssh ax12 "su 0 PATH=/data/data/com.termux/files/usr/bin:\$PATH python3 ~/ax12-re
 
 ---
 
-## Test 4: GPS Position
+## Test 4: Location (network position — NOT GNSS)
+
+> **Note:** This test reads Android's location service, which on the AX12 returns a **WiFi/network-derived** position (`fused`/`network` providers). The MT6631 GNSS core acquires **zero satellites** — no GPS antenna is populated on the PCB (see [hardware map](hardware/hardware-map.md)). This test only works on a network the device can geolocate against; it produces no usable position in the field.
 
 **What to do:**
 ```bash
 ssh ax12 "python3 ~/ax12-research/tools/gps_tool.py position"
 ```
 
-**Expected result:** Prints latitude, longitude, altitude, and a clickable Google Maps link.
+**Expected result:** Prints a latitude/longitude from network positioning (typically 15-20 m accuracy on known WiFi) with a Google Maps link. This is **not** a satellite fix.
 
 **Troubleshooting:**
-- If "no fix": GPS needs sky visibility. Move near a window or outside. First fix can take 30-60 seconds.
-- If "device not found": GPS may need root activation: `ssh ax12 "su 0 python3 ~/ax12-research/tools/gps_tool.py position"`
-- Cached position may show if cold start is slow -- verify coordinates are reasonable.
+- If "no fix": there is no GNSS fix to be had — the receiver hears no satellites (no antenna). A network position requires the device be online against a geolocatable network.
+- If "device not found": location service may need root: `ssh ax12 "su 0 python3 ~/ax12-research/tools/gps_tool.py position"`
+- To confirm the GNSS receiver itself is dead: `su 0 am start -n com.mediatek.ygps/.YgpsActivity` shows sats *in view* (almanac dots) with **blank SNR** — zero signal.
 
 ---
 
@@ -122,10 +124,10 @@ ssh ax12 "bash ~/ax12-research/scripts/doom-demo.sh"
 ssh ax12 "bash ~/ax12-research/scripts/atak-bridge.sh --test"
 ```
 
-**Expected result:** Console shows Cursor-on-Target XML messages being generated with GPS coordinates and timestamps.
+**Expected result:** Console shows Cursor-on-Target XML messages being generated with coordinates and timestamps. Note: self-position here comes from network location, not GNSS (no GPS antenna populated) — usable only where the device can geolocate against a network.
 
 **Troubleshooting:**
-- If "GPS not available": Run Test 4 first to confirm GPS works, then retry.
+- If "GPS not available": Run Test 4 first to confirm a network position is available, then retry. (There is no satellite fix on this device — no antenna.)
 - If script not found: Check path: `ssh ax12 "ls ~/ax12-research/scripts/atak-bridge.sh"`
 - If no output: Add verbose flag if available, or check stderr: `ssh ax12 "bash ~/ax12-research/scripts/atak-bridge.sh --test 2>&1"`
 

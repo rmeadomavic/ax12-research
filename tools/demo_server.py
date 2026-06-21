@@ -586,7 +586,7 @@ table tr:hover td {
             <thead><tr><th>Peripheral</th><th>Status</th><th>Notes</th></tr></thead>
             <tbody>
                 <tr><td>FM Radio (MT6631)</td><td><span class="badge badge-ready">Ready</span></td><td>87.5&ndash;108 MHz, /dev/fm</td></tr>
-                <tr><td>GPS (MT6631)</td><td><span class="badge badge-ready">Ready</span></td><td>No ext. antenna populated</td></tr>
+                <tr><td>GPS (MT6631)</td><td><span class="badge badge-missing">No fix</span></td><td>GNSS stack runs but no antenna populated &mdash; zero satellites, unusable without HW mod</td></tr>
                 <tr><td>Bluetooth</td><td><span class="badge badge-ready">Ready</span></td><td>A2DP, BLE, MIDI capable</td></tr>
                 <tr><td>USB OTG Host</td><td><span class="badge badge-ready">Ready</span></td><td>Sysfs toggle, VBUS power</td></tr>
                 <tr><td>WiFi (MT6631)</td><td><span class="badge badge-active">Active</span></td><td>Tailscale connected</td></tr>

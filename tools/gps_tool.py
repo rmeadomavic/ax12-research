@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
-"""GPS Location Display and Logging Tool for RadioMaster AX12.
+"""Location Display and Logging Tool for RadioMaster AX12.
 
-Reads GPS position from Android's location service (dumpsys location)
-and provides display, monitoring, logging, NMEA reading, and satellite info.
+Reads position from Android's location service (dumpsys location) and provides
+display, monitoring, logging, NMEA reading, and satellite info.
+
+WARNING: The AX12 produces NO usable GNSS fix. No GPS antenna is populated on
+the PCB, so the MT6631 GNSS core acquires zero satellites (verified: AGC at
+thermal noise floor, GNSS RTC never set, blank NMEA SNR). The positions this
+tool returns come from Android's WiFi/network ('fused'/'network') providers —
+useful only where the device can geolocate against a known network, never in
+the field. The 'nmea'/'satellites' subcommands will show sats in view (almanac
+dots) with no signal. See docs/hardware/hardware-map.md.
 
 Usage:
     python3 gps_tool.py position      - Show current position once
