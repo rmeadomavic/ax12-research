@@ -229,7 +229,7 @@ ssh ax12 "su 0 /data/data/com.termux/files/usr/bin/python3 ~/ax12-research/tools
 | 1 | SSH | `ssh ax12 "echo ok"` | Prints "ok" |
 | 2 | Web Dashboard | Browser :8082 | Page loads |
 | 3 | FM Radio | fm_radio.py listen | Audio plays |
-| 4 | GPS | gps_tool.py position | Coordinates shown |
+| 4 | Location (network) | gps_tool.py position | Network position (no satellite fix) |
 | 5 | Model Backup | model_tool.py list | Models listed |
 | 6 | DOOM | doom-demo.sh | Game on screen |
 | 7 | CoT/ATAK | atak-bridge.sh --test | CoT XML output |
