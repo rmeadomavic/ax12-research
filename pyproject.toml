@@ -55,4 +55,11 @@ include = ["umbus*"]
 umbus = ["py.typed"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# Tests live in tools/ (tools/test_*.py), run under unittest in CI. There is no
+# tests/ directory; the old value collected nothing under testpaths.
+testpaths = ["tools"]
+# tools/system_test.py is an on-device hardware diagnostic whose functions match
+# the default *_test.py glob but return status tuples (not real pytest tests).
+# Exclude it so it stops emitting PytestReturnNotNoneWarning; it still runs as a
+# standalone script: `python3 tools/system_test.py`.
+addopts = "--ignore=tools/system_test.py"
