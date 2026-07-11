@@ -31,5 +31,8 @@ Open research targets, by priority.
 ## Future
 
 - **ATAK integration** — Tactical UAV controller leveraging the built-in GCS, IMU, and map engine.
-- **Python package** — Package `umbus.py` as a pip-installable library.
 - **Lua widgets** — Custom on-device dashboards via LVGL bindings.
+
+## Completed
+
+- **Python package** — `umbus.py` is packaged as a pip-installable library: the `umbus/` package with an `umbus-decode` console script (see `pyproject.toml`).
