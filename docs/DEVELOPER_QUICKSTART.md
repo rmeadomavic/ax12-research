@@ -31,8 +31,8 @@ su 0 /data/data/com.termux/files/usr/bin/python3 ~/ax12-research/tools/model_too
 # Scan WiFi networks
 python3 ~/ax12-research/tools/wifi_scanner.py scan
 
-# Test MAVLink bridge (synthetic quadcopter)
-python3 ~/ax12-research/tools/mavlink_bridge.py test --duration 10
+# Test MAVLink bridge (synthetic quadcopter) — now in the ax12-tac-tools repo
+python3 ~/ax12-tac-tools/tools/mavlink_bridge.py test --duration 10
 ```
 
 ## Run Lua Scripts
@@ -88,6 +88,6 @@ SSH Session (Termux, u0_a86)
 
 ## Need Help?
 
-- [UMBUS Protocol Spec](docs/protocol/umbus-protocol.md)
-- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [UMBUS Protocol Spec](protocol/umbus-protocol.md)
+- [CONTRIBUTING.md](../CONTRIBUTING.md)
 - github.com/rmeadomavic/ax12-research/issues

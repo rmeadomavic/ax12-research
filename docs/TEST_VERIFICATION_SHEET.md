@@ -119,17 +119,19 @@ ssh ax12 "bash ~/ax12-research/scripts/doom-demo.sh"
 
 ## Test 7: CoT/ATAK Bridge
 
+> **Note:** The ATAK/CoT bridge moved to the [`ax12-tac-tools`](https://github.com/rmeadomavic/ax12-tac-tools) repo; clone it alongside this one (paths below assume `~/ax12-tac-tools`).
+
 **What to do:**
 ```bash
-ssh ax12 "bash ~/ax12-research/scripts/atak-bridge.sh --test"
+ssh ax12 "bash ~/ax12-tac-tools/scripts/atak-bridge.sh --test"
 ```
 
 **Expected result:** Console shows Cursor-on-Target XML messages being generated with coordinates and timestamps. Note: self-position here comes from network location, not GNSS (no GPS antenna populated) — usable only where the device can geolocate against a network.
 
 **Troubleshooting:**
 - If "GPS not available": Run Test 4 first to confirm a network position is available, then retry. (There is no satellite fix on this device — no antenna.)
-- If script not found: Check path: `ssh ax12 "ls ~/ax12-research/scripts/atak-bridge.sh"`
-- If no output: Add verbose flag if available, or check stderr: `ssh ax12 "bash ~/ax12-research/scripts/atak-bridge.sh --test 2>&1"`
+- If script not found: Check path: `ssh ax12 "ls ~/ax12-tac-tools/scripts/atak-bridge.sh"`
+- If no output: Add verbose flag if available, or check stderr: `ssh ax12 "bash ~/ax12-tac-tools/scripts/atak-bridge.sh --test 2>&1"`
 
 ---
 
@@ -141,7 +143,7 @@ Open in browser: **http://100.87.134.108:8080**
 **Expected result:** Live web page showing real-time gimbal positions, switch states, and potentiometer values updating as you move controls.
 
 **Troubleshooting:**
-- If page does not load: The calibrator server may not be running. Start it: `ssh ax12 "python3 ~/ax12-research/tools/calibrator_server.py --port 8080 &"`
+- If page does not load: The calibrator server may not be running. Start it: `ssh ax12 "python3 ~/ax12-research/tools/calibrator-web/server.py --port 8080 &"`
 - If data is stale/frozen: The UMBUS reader may have disconnected. Restart the server.
 - Check if port is in use: `ssh ax12 "ss -tlnp | grep 8080"`
 
