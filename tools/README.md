@@ -4,7 +4,7 @@ Python toolchain for monitoring, capturing, and analyzing UMBUS protocol traffic
 
 | Tool | Purpose | Usage |
 |------|---------|-------|
-| `umbus.py` | UMBUS protocol library (frame parsing, CRC, enums) | `import` only — not run directly |
+| `umbus.py` | UMBUS protocol library (frame parsing, CRC, enums) | `import`, or run directly: `python3 umbus.py <capture.bin>` (also `-` for stdin, `--live` for ttyS0) |
 | `strace-parser.py` | Parse UMBUS frames from strace logs | `python3 strace-parser.py captures/raw.log` |
 | `monitor.py` | Live TUI channel/gimbal viewer | `su 0 python3 monitor.py` |
 | `calibrator.py` | Interactive gimbal and switch mapping | `su 0 python3 calibrator.py` |

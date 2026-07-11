@@ -17,4 +17,4 @@ jobs:
           python-version: "3.11"
 
       - name: Run tests
-        run: python3 -m unittest tools/test_umbus.py tools/test_strace_parser.py tools/test_simulator.py -v
+        run: python3 -m unittest tools/test_umbus.py tools/test_umbus_package.py tools/test_strace_parser.py tools/test_simulator.py -v

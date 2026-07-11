@@ -119,17 +119,19 @@ ssh ax12 "bash ~/ax12-research/scripts/doom-demo.sh"
 
 ## Test 7: CoT/ATAK Bridge
 
+> **Note:** The ATAK/CoT bridge moved to the [`ax12-tac-tools`](https://github.com/rmeadomavic/ax12-tac-tools) repo; clone it alongside this one (paths below assume `~/ax12-tac-tools`).
+
 **What to do:**
 ```bash
-ssh ax12 "bash ~/ax12-research/scripts/atak-bridge.sh --test"
+ssh ax12 "python3 ~/ax12-tac-tools/tools/cot_bridge.py --test"
 ```
 
-**Expected result:** Console shows Cursor-on-Target XML messages being generated with coordinates and timestamps. Note: self-position here comes from network location, not GNSS (no GPS antenna populated) — usable only where the device can geolocate against a network.
+**Expected result:** Console shows synthetic Cursor-on-Target XML messages (a moving test track) generated at the send interval, confirming the MAVLink-to-CoT emit path works. In live use the position comes from the aircraft's own MAVLink telemetry on ttyS1 — not the radio (the AX12 has no GPS antenna).
 
 **Troubleshooting:**
-- If "GPS not available": Run Test 4 first to confirm a network position is available, then retry. (There is no satellite fix on this device — no antenna.)
-- If script not found: Check path: `ssh ax12 "ls ~/ax12-research/scripts/atak-bridge.sh"`
-- If no output: Add verbose flag if available, or check stderr: `ssh ax12 "bash ~/ax12-research/scripts/atak-bridge.sh --test 2>&1"`
+- `--test` uses synthetic data, so it needs no GPS or aircraft link — it exercises the CoT emit path only. For live telemetry, the aircraft must be powered with MAVLink flowing to ttyS1.
+- If file not found: Check path: `ssh ax12 "ls ~/ax12-tac-tools/tools/cot_bridge.py"`
+- If no output: Check stderr: `ssh ax12 "python3 ~/ax12-tac-tools/tools/cot_bridge.py --test 2>&1"`
 
 ---
 
@@ -141,7 +143,7 @@ Open in browser: **http://100.87.134.108:8080**
 **Expected result:** Live web page showing real-time gimbal positions, switch states, and potentiometer values updating as you move controls.
 
 **Troubleshooting:**
-- If page does not load: The calibrator server may not be running. Start it: `ssh ax12 "python3 ~/ax12-research/tools/calibrator_server.py --port 8080 &"`
+- If page does not load: The calibrator server may not be running. Start it: `ssh ax12 "python3 ~/ax12-research/tools/calibrator-web/server.py --port 8080 &"`
 - If data is stale/frozen: The UMBUS reader may have disconnected. Restart the server.
 - Check if port is in use: `ssh ax12 "ss -tlnp | grep 8080"`
 
@@ -229,10 +231,10 @@ ssh ax12 "su 0 /data/data/com.termux/files/usr/bin/python3 ~/ax12-research/tools
 | 1 | SSH | `ssh ax12 "echo ok"` | Prints "ok" |
 | 2 | Web Dashboard | Browser :8082 | Page loads |
 | 3 | FM Radio | fm_radio.py listen | Audio plays |
-| 4 | GPS | gps_tool.py position | Coordinates shown |
+| 4 | Location (network) | gps_tool.py position | Network position (no satellite fix) |
 | 5 | Model Backup | model_tool.py list | Models listed |
 | 6 | DOOM | doom-demo.sh | Game on screen |
-| 7 | CoT/ATAK | atak-bridge.sh --test | CoT XML output |
+| 7 | CoT/ATAK | cot_bridge.py --test | CoT XML output |
 | 8 | Calibrator | Browser :8080 | Live data |
 | 9 | Meshtastic | Open app | App launches |
 | 10 | Lua Scripts | EdgeTX menu | Script runs |

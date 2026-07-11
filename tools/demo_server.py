@@ -736,7 +736,7 @@ table tr:hover td {
                 <tr><td><strong>FM Radio</strong></td><td>MT6631 combo chip, 87.5-108 MHz via /dev/fm ioctls. Headphone cable = antenna.</td></tr>
                 <tr><td><strong>MCU Autonomous</strong></td><td>AT32F435 broadcasts all frame types at full rate without Flyshark app running.</td></tr>
                 <tr><td><strong>Lua VM + LVGL</strong></td><td>Embedded Lua 5.3 with bitmap, etxdir, and full LVGL UI framework. EdgeTX-compatible API.</td></tr>
-                <tr><td><strong>USB OTG Host</strong></td><td>Top USB-C supports host mode via 3 sysfs writes. Keyboards, GPS, flash drives work.</td></tr>
+                <tr><td><strong>USB OTG Host</strong></td><td>Top USB-C exposes a host-mode role switch via 3 sysfs writes. Sysfs toggle responsive; host-mode untested on hardware.</td></tr>
                 <tr><td><strong>HDMI Latency</strong></td><td>RN6752M routed through full ISP pipeline (22+ tuning libs). 5 CAMSV DMA engines available for bypass.</td></tr>
                 <tr><td><strong>Cellular Modem</strong></td><td>MT8788 baseband runs LTE firmware. 21 interfaces exist but no SIM/antenna on PCB.</td></tr>
                 <tr><td><strong>ELRS Backpack WiFi</strong></td><td>ESP chip creates WiFi AP, forwards MAVLink UDP:14550 to QGC/ATAK/Mission Planner.</td></tr>

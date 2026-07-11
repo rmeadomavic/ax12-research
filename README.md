@@ -44,7 +44,7 @@ The Android side runs Flyshark, a Qt6/QML application with an embedded Lua 5.3 V
 python3 tools/strace-parser.py captures/idle-strace.txt
 
 # Validate CRC checksums
-python3 tools/umbus.py captures/idle-frames.bin
+python3 tools/umbus.py captures/umbus-mcu-standalone.bin
 
 # Generate synthetic traffic for offline testing
 python3 tools/simulator.py generate --seconds 5
