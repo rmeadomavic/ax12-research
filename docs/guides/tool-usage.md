@@ -230,7 +230,7 @@ svc.run()
 
 **Caveats:**
 - SSE broadcasts are throttled to ~12 Hz (every 2nd channel frame).
-- Config is persisted to `docs/control-map.json`.
+- Config is persisted to `data/control-map.json`.
 - Standalone mode shows a minimal live monitor UI.
 
 ---
@@ -399,7 +399,7 @@ Then open `http://<device-ip>:8081` in a browser.
 
 **Caveats:**
 - Thresholds: gimbal detection requires >150 delta from center; channel detection requires >500 delta.
-- Config persists to `docs/control-map.json` across sessions.
+- Config persists to `data/control-map.json` across sessions.
 - Opens ttyS0 directly in live mode — stop Flyshark first, or use `--demo`.
 
 ---

@@ -11,9 +11,10 @@ echo
 
 # 1. Start demo web server
 echo "[1/5] Starting demo web server on port 8082..."
+echo "  <AX12-IP> is the radio's Tailscale or LAN address."
 pkill -f 'demo_server.py' 2>/dev/null
 nohup $PY ~/ax12-research/tools/demo_server.py --port 8082 > /dev/null 2>&1 &
-echo "  -> http://100.87.134.108:8082"
+echo "  -> http://<AX12-IP>:8082"
 
 # 2. Network location (NOT GNSS — no GPS antenna populated)
 echo "[2/5] Reading network location (no GNSS antenna on board)..."
@@ -31,8 +32,8 @@ echo "  -> WiFi: $WIFI"
 
 # 4. List available demos
 echo "[4/5] Available demos:"
-echo "  Web Dashboard:     http://100.87.134.108:8082"
-echo "  Calibrator:        http://100.87.134.108:8080"
+echo "  Web Dashboard:     http://<AX12-IP>:8082"
+echo "  Calibrator:        http://<AX12-IP>:8080"
 echo "  DOOM:              bash scripts/doom-demo.sh"
 echo "  Tactical tools:   github.com/rmeadomavic/ax12-tac-tools"
 echo "  Net Location:      python3 tools/gps_tool.py position  (network, no GNSS)"

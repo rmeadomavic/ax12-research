@@ -25,9 +25,9 @@ The Android side runs Flyshark, a Qt6/QML application with an embedded Lua 5.3 V
 
 ## Key Findings
 
-**UMBUS protocol fully decoded.** Eight frame types, field-mapped and timed. MCU sends channel data at 25 Hz, heartbeats at 4 Hz, ELRS telemetry at 5 Hz. The checksum is CRC-8/MAXIM with per-type init values — the insight that got us to 100% validation. [Protocol spec →](docs/protocol/umbus-protocol.md)
+**UMBUS framing, CRC, timing, and primary channel data decoded.** Eight frame types are identified and timed. MCU sends channel data at 25 Hz, heartbeats at 4 Hz, ELRS telemetry at 5 Hz. The checksum is CRC-8/MAXIM with per-type init values — the insight that got us to 100% validation of captured frames. Remaining unknown bytes and command semantics are explicitly tracked. [Protocol spec →](docs/protocol/umbus-protocol.md)
 
-**33 output channels** with per-channel reverse, curves, dual rates, and mixing. Every physical control mapped to its UMBUS byte offset. [Hardware map →](docs/hardware/hardware-map.md)
+**33 output channels** with per-channel reverse, curves, dual rates, and mixing. Primary controls are mapped from idle-state captures; the ELRS field map and non-idle behavior remain active research targets. [Hardware map →](docs/hardware/hardware-map.md)
 
 **MCU operates autonomously.** The AT32 broadcasts all frame types at documented rates with or without the app running. No handshake required.
 
@@ -83,7 +83,7 @@ On a rooted AX12, see the [Capture Session Guide](docs/guides/capture-session-gu
 
 ## Tools
 
-40+ Python tools, stdlib only. No external dependencies.
+37 top-level Python tools, plus supporting modules and tests. The tools use the standard library only, with no external dependencies.
 
 | Tool | Purpose |
 |------|---------|
@@ -120,7 +120,7 @@ Operational tools (ATAK/CoT bridges, MAVLink integration, airspace awareness, Lu
 
 ## Status
 
-The idle-state protocol is solid — fully decoded, CRC-validated, and tooled. Hardware is enumerated. The native library is mapped at the symbol level.
+The idle-state protocol framing, CRC, timing, and primary channel data are decoded, validated, and tooled; remaining unknown bytes are documented. Hardware is enumerated. The native library is mapped at the symbol level.
 
 Open targets: non-idle captures (binding, flying, trainer), app-to-MCU command semantics, ELRS telemetry field mapping, USB OTG physical testing. See [ROADMAP.md](ROADMAP.md).
 
@@ -130,4 +130,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Highest-value contributions right now: c
 
 ## License
 
-[MIT](LICENSE) — Kyle Adomavicius
+[MIT](LICENSE) — Kyle Adomavicius. Bundled third-party files and the vendor-extracted device tree have separate provenance or licensing considerations; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -340,7 +340,7 @@ def save_results():
         }
     with open(path, 'w') as f:
         json.dump(out, f, indent=2)
-    broadcast_log(f'Results saved to docs/control-map.json ({cal["samples"]} cal samples)')
+    broadcast_log(f'Results saved to data/control-map.json ({cal["samples"]} cal samples)')
 
 
 def get_cal():
@@ -688,7 +688,7 @@ function esc(s){return s.replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function renderWiz(w){
   if(w.wstate==='done'){
     $wiz.innerHTML=`<p style="color:var(--grn);font-weight:600;margin-bottom:10px">Mapping Complete</p>
-      <p style="color:var(--dim);font-size:12px">Results saved to docs/control-map.json</p>
+      <p style="color:var(--dim);font-size:12px">Results saved to data/control-map.json</p>
       <div class="btns" style="margin-top:10px"><button class="btn btn-go" onclick="api('start')">Run Again</button></div>`;
     return;
   }

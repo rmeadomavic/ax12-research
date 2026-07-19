@@ -22,12 +22,14 @@ su 0 pm install ~/downloads/qgc.apk
 
 ## Connect via MAVLink Bridge
 
+The MAVLink bridge is maintained in the separate [ax12-tac-tools repository](https://github.com/rmeadomavic/ax12-tac-tools). Clone that repository alongside `ax12-research` before running these commands.
+
 ### Option A: ELRS Backpack WiFi (Recommended)
 
 1. Connect AX12 to the ELRS Backpack WiFi AP (`ExpressLRS TX` or similar)
 2. Start the bridge:
    ```bash
-   python3 tools/mavlink_bridge.py bridge
+   python3 ~/ax12-tac-tools/tools/mavlink_bridge.py bridge
    ```
 3. In QGC: Settings > Comm Links > Add > TCP > Host: 127.0.0.1 > Port: 5760
 4. Connect. You should see the vehicle appear.
@@ -37,7 +39,7 @@ su 0 pm install ~/downloads/qgc.apk
 1. Ensure no other app is using ttyS1
 2. Start serial bridge:
    ```bash
-   su 0 python3 tools/mavlink_bridge.py serial
+   su 0 python3 ~/ax12-tac-tools/tools/mavlink_bridge.py serial
    ```
 3. In QGC: Same TCP connection as above
 
@@ -45,7 +47,7 @@ su 0 pm install ~/downloads/qgc.apk
 
 Use the bridge test mode to verify QGC connects:
 ```bash
-python3 tools/mavlink_bridge.py test --duration 300
+python3 ~/ax12-tac-tools/tools/mavlink_bridge.py test --duration 300
 ```
 This generates a synthetic quadcopter orbiting at 50m AGL in LOITER mode.
 Open QGC and connect to TCP 127.0.0.1:5760 -- you should see the vehicle on the map.
@@ -53,7 +55,7 @@ Open QGC and connect to TCP 127.0.0.1:5760 -- you should see the vehicle on the 
 ## Monitor MAVLink Traffic
 
 ```bash
-python3 tools/mavlink_bridge.py monitor
+python3 ~/ax12-tac-tools/tools/mavlink_bridge.py monitor
 ```
 Shows decoded message types, rates, vehicle state without forwarding.
 

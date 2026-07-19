@@ -864,7 +864,7 @@ class DemoHandler(BaseHTTPRequestHandler):
         info = get_device_info()
         cal = get_calibration()
         models = get_model_list()
-        host = self.headers.get("Host", "100.87.134.108:8080")
+        host = self.headers.get("Host", "localhost:8080")
         ip = host.split(":")[0]
         port = str(self.server.server_address[1])
 
@@ -981,7 +981,7 @@ def main():
     server = HTTPServer((args.bind, args.port), DemoHandler)
     print(f"RadioMaster AX12 Research - Demo Server")
     print(f"  Local:   http://localhost:{args.port}/")
-    print(f"  Network: http://100.87.134.108:{args.port}/")
+    print(f"  Network: http://<AX12-IP>:{args.port}/")
     print(f"Press Ctrl+C to stop.\n")
 
     try:

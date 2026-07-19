@@ -8,7 +8,7 @@ Raw serial capture data from UMBUS protocol monitoring sessions. All captures we
 |------|-------------|
 | `idle-strace.txt` | Truncated strace log from idle state |
 | `idle-strace-full.txt` | Full strace log (~10 seconds idle) |
-| `idle-raw-10s.bin` | Raw binary capture of serial traffic |
+| `umbus-mcu-standalone.bin` | Raw binary capture of standalone MCU serial traffic |
 | `frames.json` | Parsed UMBUS frames (JSON) |
 | `timed-frames.json` | Timestamped parsed frames (JSON) |
 | `jitter-debug.txt` | Frame timing jitter debug output |

@@ -8,7 +8,8 @@
 ## Prerequisites
 
 - AX12 powered on and connected to WiFi
-- Tailscale running on AX12 (IP: 100.87.134.108)
+- Tailscale running on AX12 (`<AX12-IP>`)
+- `<AX12-IP>` is the radio's Tailscale or LAN address.
 - Headphones available (for FM radio test)
 - Laptop on same Tailscale network
 - HDMI cable available (for HDMI test)
@@ -27,7 +28,7 @@ ssh ax12 "echo ok"
 **Troubleshooting:**
 - If timeout: Verify AX12 is on WiFi. Open Termux on the AX12 and run `tailscale status`.
 - If connection refused: Restart sshd in Termux: open Termux app, run `sshd`.
-- If host key error: `ssh-keygen -R 100.87.134.108` then retry.
+- If host key error: `ssh-keygen -R <AX12-IP>` then retry.
 
 ---
 
@@ -37,7 +38,7 @@ ssh ax12 "echo ok"
 ```bash
 ssh ax12 "python3 ~/ax12-research/tools/demo_server.py --port 8082 &"
 ```
-Then open in browser: **http://100.87.134.108:8082**
+Then open in browser: **http://<AX12-IP>:8082**
 
 **Expected result:** Browser shows a device info page with system stats, IP addresses, and AX12 status.
 
@@ -138,7 +139,7 @@ ssh ax12 "python3 ~/ax12-tac-tools/tools/cot_bridge.py --test"
 ## Test 8: Calibrator Web Interface
 
 **What to do:**
-Open in browser: **http://100.87.134.108:8080**
+Open in browser: **http://<AX12-IP>:8080**
 
 **Expected result:** Live web page showing real-time gimbal positions, switch states, and potentiometer values updating as you move controls.
 

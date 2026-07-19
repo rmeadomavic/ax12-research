@@ -663,7 +663,7 @@ function renderWizard(p){
   }else if(ph==='complete'){
     $('wiz-title').textContent='Complete';
     html=`<p style="color:var(--grn);font-weight:600;margin-bottom:10px">Calibration complete!</p>
-      <p style="color:var(--dim);font-size:12px;margin-bottom:10px">Saved to docs/control-map.json</p>
+      <p style="color:var(--dim);font-size:12px;margin-bottom:10px">Saved to data/control-map.json</p>
       <div class="btns"><button class="btn btn-go" onclick="api('center')">Recalibrate</button></div>`;
   }
   $('wiz-body').innerHTML=html;
